@@ -1,7 +1,8 @@
-"crwPredict" <- function(object.crwFit, data, predTime=NULL,
+"crwPredict" <- function(object.crwFit, predTime=NULL,
                          speedEst=FALSE, flat=FALSE)
 {
     ## Model definition/parameters ##
+    data <- object.crwFit$data
     driftMod <- object.crwFit$random.drift
     stopMod <- !is.null(object.crwFit$stop.model)
     mov.mf <- object.crwFit$mov.mf
@@ -16,6 +17,10 @@
 
     ## Data setup ##
     if (!is.null(predTime)) {
+        if(min(predTime) <  data[1, tn]) {
+          warning("Predictions times given before first observation!\nOnly those after first observation will be used.")
+          predTime <- predTime[predTime>=data[1,tn]]
+        }
         origTime <- data[, tn]
         if (is.null(data$locType)) data$locType <- "o"
         predData <- data.frame(predTime, "p")
@@ -24,14 +29,19 @@
                       by=c(tn, "locType"), all=TRUE)
         dups <- duplicated(data[, tn])
         data <- data[!dups, ]
-        mov.mf <- as.matrix(expandPred(origTime, mov.mf, predTime))
-        if (stopMod) stop.mf <- as.matrix(expandPred(origTime, stop.mf, predTime))
-        if (!is.null(err.mfX)) err.mfX <- as.matrix(expandPred(origTime, err.mfX, predTime))
-        if (!is.null(err.mfY)) err.mfY <- as.matrix(expandPred(origTime, err.mfY, predTime))
+        mov.mf <- as.matrix(expandPred(x=mov.mf, Time=origTime, predTime=predTime))
+        if (stopMod) stop.mf <- as.matrix(expandPred(x=stop.mf, Time=origTime, predTime=predTime))
+        if (!is.null(err.mfX)) err.mfX <- as.matrix(expandPred(x=err.mfX, Time=origTime, predTime=predTime))
+        if (!is.null(err.mfY)) err.mfY <- as.matrix(expandPred(x=err.mfY, Time=origTime, predTime=predTime))
     }
     if (object.crwFit$polar.coord) {
         lonAdjVals <- cos(round(approx(data[, tn], data[, object.crwFit$coord[2]],
                                        data[, tn])$y, 0) * pi / 180)
+        if(is.na(lonAdjVals[1])) stop("Error in Longitude correction: Check to see that prediction times do not predate first observation")
+        if(is.na(lonAdjVals[nrow(data)])) {
+         warning('Forcasting locations past last observation: Longitude correction will be based on the last observation')
+          lonAdjVals <- lonAdjVals[!is.na(lonAdjVals)][cumsum(!is.na(lonAdjVals))]
+        }
     } else lonAdjVals <- rep(1, nrow(data))
     delta <- c(diff(data[, tn]), 1)
     a1.x <- object.crwFit$initial.state$a1.x
@@ -47,7 +57,7 @@
     if (!is.null(err.mfX)) {
         theta.errX <- par[1:n.errX]
         tau2x <- exp(2 * err.mfX %*% theta.errX)
-    } else tau2x <- 0.0
+    } else tau2x <- rep(0.0, nrow(data))
     if (!is.null(err.mfY)) {
         theta.errY <- par[(n.errX + 1):(n.errX + n.errY)]
         tau2y <- exp(2 * err.mfY %*% theta.errY)
@@ -59,8 +69,7 @@
     if (stopMod) {
         stop.mf <- object.crwFit$stop.mf
         theta.stop <- par[(n.errX + n.errY + 2 * n.mov + 1)]
-        b[stop.mf != 1] <- b[stop.mf != 1] / ((1 - stop.mf[stop.mf != 1]) ^
-                               exp(theta.stop))
+        b <- ifelse(stop.mf != 1, b /((1 - stop.mf)^exp(theta.stop)), 9999)
         stay[stop.mf == 1] <- 1
     }
     if (driftMod) {
@@ -107,12 +116,12 @@
     if (driftMod) {
         names(predx) <- c("mu.x", "theta.x", "gamma.x")
     } else names(predx) <- c("mu.x", "nu.x")
-    vary <- array(out$vary, c(2 + driftMod, 2 + driftMod, N))
-    varx <- array(out$varx, c(2 + driftMod, 2 + driftMod, N))
+    vary <- zapsmall(array(out$vary, c(2 + driftMod, 2 + driftMod, N)))
+    varx <- zapsmall(array(out$varx, c(2 + driftMod, 2 + driftMod, N)))
     if (speedEst) {
         log.speed <- logSpeed(predx, predy, varx, vary, object.crwFit$polar.coord)
     } else log.speed <- NULL
-    out <- list(originalData=data, alpha.hat.y=predy, alpha.hat.x=predx,
+    out <- list(originalData=fillCols(data), alpha.hat.y=predy, alpha.hat.x=predx,
                 V.hat.y=vary, V.hat.x=varx, speed=log.speed, loglik=out$lly + out$llx)
     attr(out, "coord") <- c(x=object.crwFit$coord[1], y=object.crwFit$coord[2])
     attr(out, "random.drift") <- driftMod
@@ -120,7 +129,7 @@
     attr(out, "polar.coord") <- object.crwFit$polar.coord
     attr(out, "Time.name") <- tn
     if (flat) {
-        out <- as.flat(out)
+        out <- fillCols(as.flat(out))
     } else {
         class(out) <- c("crwPredict", "list")
         attr(out, "flat") <- FALSE

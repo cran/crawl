@@ -87,8 +87,8 @@ fit <- crwMLE(mov.model=~1, err.model=list(x=~errX, y=~errY), drift.model=TRUE,
 
 ##Make hourly location predictions
 predTime <- seq(ceiling(min(nfsNew$Time)), floor(max(nfsNew$Time)), 1)
-predObj <- crwPredict(object.crwFit=fit, data=nfsNew, predTime=predTime,
-                      speedEst=TRUE, flat=FALSE)
+predObj <- crwPredict(object.crwFit=fit, predTime=predTime, speedEst=TRUE,
+                      flat=FALSE)
 str(predObj)
 predObj <- as.flat(predObj)
 head(predObj)

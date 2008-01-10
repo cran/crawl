@@ -12,24 +12,21 @@
 
   The \code{crwPredict} function uses a fitted model object from
   \code{crwMLE} to predict animal locations (with estimated uncertainty)
-  at times indicated by the \code{Time} column in \code{data} and
-  supplimented by times in \code{predTime}. If \code{speedEst} is set to
-  \code{TRUE}, then animal log-speed is also estimated.
+  at times in the original data set and supplimented by times in
+  \code{predTime}. If \code{speedEst} is set to \code{TRUE}, then animal
+  log-speed is also estimated.
 
 }
 
 
 \usage{
-crwPredict(object.crwFit, data, predTime=NULL, speedEst=FALSE, flat=FALSE)
+crwPredict(object.crwFit, predTime=NULL, speedEst=FALSE, flat=FALSE)
 
 }
 
 
 \arguments{
   \item{object.crwFit}{A model object from \code{\link{crwMLE}}.}
-
-  \item{data}{data used to fit the model (see details in
-    \code{\link{crwMLE}}.}
 
   \item{predTime}{vector of additional prediction times.}
 
@@ -80,7 +77,7 @@ errors (se) and the speed estimates.
 }
 
 
-\seealso{ See \code{\link{northernFurSeal}} for additional examples. }
+\seealso{ See \code{\link{northernFurSeal}} for example. }
 
 % -------------------------------------------------------------------------
 
