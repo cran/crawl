@@ -16,7 +16,6 @@ SUBROUTINE crwn2ll(tau2y, tau2x, sig2, b, bd, sig2d, delta, x, y, loctype, stay,
   T(1,1) = 1.0
   Qy = 0.0
   Qx = 0.0
-
  !! BEGIN FILTER LOOP !!
   DO i=1,N
 
@@ -37,26 +36,29 @@ SUBROUTINE crwn2ll(tau2y, tau2x, sig2, b, bd, sig2d, delta, x, y, loctype, stay,
     END IF
 
    !! GENERAL KF LOOP !!
-    IF(loctype(i)==1) THEN
+    Fy = Py(1,1) + tau2y(i)
+    Fx = Px(1,1) + tau2x(i)/(lonadj(i)*lonadj(i))
+    IF(loctype(i)==1 .OR. Fy==0.0) THEN
       ay = MATMUL(T,ay)
-      ax = MATMUL(T,ax)
       Py = MATMUL(MATMUL(T,Py),TRANSPOSE(T)) + Qy
-      Px = MATMUL(MATMUL(T,Px),TRANSPOSE(T)) + Qx
     ELSE
       vy = y(i)-ay(1,1)
-      vx = x(i)-ax(1,1)
-      Fy = Py(1,1) + tau2y(i)
-      Fx = Px(1,1) + tau2x(i)/(lonadj(i)*lonadj(i))
-      Ky = MATMUL(MATMUL(T,Py),TRANSPOSE(Z))/Fy
-      Kx = MATMUL(MATMUL(T,Px),TRANSPOSE(Z))/Fx
-      Ly = T - MATMUL(Ky,Z)
-      Lx = T - MATMUL(Kx,Z)
-      ay = MATMUL(T,ay) + Ky*vy
-      ax = MATMUL(T,ax) + Kx*vx
-      Py = MATMUL(MATMUL(T,Py),TRANSPOSE(Ly)) + Qy
-      Px = MATMUL(MATMUL(T,Px),TRANSPOSE(Lx)) + Qx
       lly = lly - (log(Fy) + vy*vy/Fy)/2
+      Ky = MATMUL(MATMUL(T,Py),TRANSPOSE(Z))/Fy
+      Ly = T - MATMUL(Ky,Z)
+      ay = MATMUL(T,ay) + Ky*vy
+      Py = MATMUL(MATMUL(T,Py),TRANSPOSE(Ly)) + Qy
+    END IF
+    IF(loctype(i)==1 .OR. Fx==0.0) THEN      
+      ax = MATMUL(T,ax)
+      Px = MATMUL(MATMUL(T,Px),TRANSPOSE(T)) + Qx
+    ELSE
+      vx = x(i)-ax(1,1)
       llx = llx - (log(Fx) + vx*vx/Fx)/2
+      Kx = MATMUL(MATMUL(T,Px),TRANSPOSE(Z))/Fx
+      Lx = T - MATMUL(Kx,Z)      
+      ax = MATMUL(T,ax) + Kx*vx      
+      Px = MATMUL(MATMUL(T,Px),TRANSPOSE(Lx)) + Qx
     END IF
   END DO
 END SUBROUTINE crwn2ll

@@ -1,13 +1,20 @@
-"crwMLE" <- function(mov.model=~1, err.model, stop.model=NULL, drift.model=FALSE,
+"crwMLE" <- function(mov.model=~1, err.model=NULL, stop.model=NULL, drift.model=FALSE,
                      data, coord=c("x", "y"), polar.coord=TRUE, Time.name,
-                     initial.state, theta, fixPar, control=NULL)
+                     initial.state, theta, fixPar, method="L-BFGS-B", control=NULL,
+                     initialSANN=NULL)
 {
     st <- Sys.time()
-    if(missing(Time.name)) stop("Argument 'Time.name' missing. Please specify")
+    if (missing(Time.name)) stop("Argument 'Time.name' missing. Please specify")
     ## SET UP MODEL MATRICES AND PARAMETERS ##
-    errMod <- !missing(err.model)
+    errMod <- !is.null(err.model)
     stopMod <- !is.null(stop.model)
     driftMod <- drift.model
+    if (
+        length(initial.state$a1.y) != driftMod+2 |
+        length(initial.state$a1.x) != driftMod+2 |
+        all(dim(initial.state$P1.y) != c(driftMod+2, driftMod+2)) |
+        all(dim(initial.state$P1.x) != c(driftMod+2, driftMod+2))
+        ) stop("Dimentions of 'initial.state' argument are not correct for the specified model")
     mov.mf <- model.matrix(mov.model, model.frame(mov.model, data, na.action=na.pass))
     if (any(is.na(mov.mf))) stop("\nMissing values are not allowed in movement covariates!\n")
     n.mov <- ncol(mov.mf)
@@ -56,8 +63,10 @@
     nms <- c(tau.nms, sig.nms, b.nms, stop.nms, drift.nms)
     n.par <- length(nms)
     if (missing(fixPar)) fixPar <- rep(NA, n.par)
+    if (length(fixPar)!=n.par) stop(paste("'fixPar' argument is not the right length\nThe number of free parameters in the model is", n.par))
     if (missing(theta)) theta <- rep(0.000001, sum(is.na(fixPar)))
     theta <- ifelse(is.na(theta), 0.00001, theta)
+    if(driftMod & is.na(fixPar[n.par])) theta[sum(is.na(fixPar))] <- log(diff(range(data[,Time.name]))/9)
     if (length(theta) != sum(is.na(fixPar))) {
         stop("\nWrong number parameters specified in start value.\n")
     }
@@ -74,12 +83,23 @@
     } else lonAdjVals <- rep(1, nrow(data))
 
     ## DEFINING OPTIMIZATION PROCEDURE ##
-    if (driftMod) {
-        if (is.na(fixPar[n.par])) {
-            lower <- c(rep(-Inf, length(theta)-1), 0)
-        } else lower <- -Inf
-    } else lower <- -Inf
-    mle <- optim(theta, crwN2ll, method="L-BFGS-B", hessian=TRUE, lower=lower,
+    if (method=='SANN' | !driftMod) lower <- -Inf
+    else {
+      if (is.na(fixPar[n.par])) {
+          lower <- c(rep(-Inf, length(theta)-1), 0)
+      } else lower <- -Inf 
+    }     
+    if (!is.null(initialSANN) & method!='SANN') {
+      init <- optim(theta, crwN2ll, method='SANN',
+                 fixPar=fixPar, y=y.lik, x=x.lik, loctype=loctype,
+                 delta=c(diff(data[, Time.name]), 1), a1.y=initial.state$a1.y,
+                 a1.x=initial.state$a1.x, P1.x=initial.state$P1.x,
+                 P1.y=initial.state$P1.y, lonAdj=lonAdjVals, mov.mf=mov.mf,
+                 err.mfX=err.mfX, err.mfY=err.mfY, stop.mf=stop.mf,
+                 n.mov=n.mov, n.errX=n.errX, n.errY=n.errY, stopMod=stopMod,
+                 driftMod=driftMod, control=initialSANN)
+    } else init <- list(par=theta)         
+    mle <- optim(init$par, crwN2ll, method=method, hessian=TRUE, lower=lower,
                  fixPar=fixPar, y=y.lik, x=x.lik, loctype=loctype,
                  delta=c(diff(data[, Time.name]), 1), a1.y=initial.state$a1.y,
                  a1.x=initial.state$a1.x, P1.x=initial.state$P1.x,
@@ -105,7 +125,7 @@
                 mov.model=mov.model, err.model=err.model, n.par=n.par, nms=nms,
                 y=y, x=x, n.mov=n.mov, n.errX=n.errX, n.errY=n.errY,
                 mov.mf=mov.mf, err.mfX=err.mfX, err.mfY=err.mfY, stop.mf=stop.mf,
-                polar.coord=polar.coord, Time.name=Time.name,
+                polar.coord=polar.coord, Time.name=Time.name, init=init,
                 runTime=difftime(Sys.time(), st))
     class(out) <- c("crwFit")
     return(out)

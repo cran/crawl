@@ -57,42 +57,48 @@ SUBROUTINE crw_predict( tau2y, tau2x, sig2, b, bg, sig2g, delta, x, y, loctype, 
     END IF
 
    !! GENERAL KF FILTER !!
-    IF(loctype(i)==1) THEN
+    Fy(i) = PyArr(1,1,i) + tau2y(i)
+    Fx(i) = PxArr(1,1,i) + tau2x(i)/(lonadj(i)*lonadj(i))
+    IF(loctype(i)==1 .OR. Fy(i)==0.0) THEN
       ayArr(:,:,i+1) = MATMUL(T,ayArr(:,:,i))
-      axArr(:,:,i+1) = MATMUL(T,axArr(:,:,i))
       PyArr(:,:,i+1) = MATMUL(MATMUL(T,PyArr(:,:,i)),TRANSPOSE(T)) + Qy
-      PxArr(:,:,i+1) = MATMUL(MATMUL(T,PxArr(:,:,i)),TRANSPOSE(T)) + Qx
       LyArr(:,:,i) = T
-      LxArr(:,:,i) = T
     ELSE
       vy(i) = y(i)-ayArr(1,1,i)
-      vx(i) = x(i)-axArr(1,1,i)
-      Fy(i) = PyArr(1,1,i) + tau2y(i)
-      Fx(i) = PxArr(1,1,i) + tau2x(i)/(lonadj(i)*lonadj(i))
-      Ky = MATMUL(MATMUL(T,PyArr(:,:,i)),TRANSPOSE(Z))/Fy(i)
-      Kx = MATMUL(MATMUL(T,PxArr(:,:,i)),TRANSPOSE(Z))/Fx(i)
-      LyArr(:,:,i) = T - MATMUL(Ky,Z)
-      LxArr(:,:,i) = T - MATMUL(Kx,Z)
-      ayArr(:,:,i+1) = MATMUL(T,ayArr(:,:,i)) + Ky*vy(i)
-      axArr(:,:,i+1) = MATMUL(T,axArr(:,:,i)) + Kx*vx(i)
-      PyArr(:,:,i+1) = MATMUL(MATMUL(T,PyArr(:,:,i)),TRANSPOSE(LyArr(:,:,i))) + Qy
-      PxArr(:,:,i+1) = MATMUL(MATMUL(T,PxArr(:,:,i)),TRANSPOSE(LxArr(:,:,i))) + Qx
       lly = lly - (log(Fy(i)) + vy(i)*vy(i)/Fy(i))/2
-      llx = llx - (log(Fx(i)) + vx(i)*vx(i)/Fx(i))/2
+      Ky = MATMUL(MATMUL(T,PyArr(:,:,i)),TRANSPOSE(Z))/Fy(i)
+      LyArr(:,:,i) = T - MATMUL(Ky,Z)
+      ayArr(:,:,i+1) = MATMUL(T,ayArr(:,:,i)) + Ky*vy(i)
+      PyArr(:,:,i+1) = MATMUL(MATMUL(T,PyArr(:,:,i)),TRANSPOSE(LyArr(:,:,i))) + Qy
+    END IF
+    IF(loctype(i)==1 .OR. Fx(i)==0.0) THEN          
+      axArr(:,:,i+1) = MATMUL(T,axArr(:,:,i))      
+      PxArr(:,:,i+1) = MATMUL(MATMUL(T,PxArr(:,:,i)),TRANSPOSE(T)) + Qx      
+      LxArr(:,:,i) = T
+    ELSE
+      vx(i) = x(i)-axArr(1,1,i)
+      llx = llx - (log(Fx(i)) + vx(i)*vx(i)/Fx(i))/2     
+      Kx = MATMUL(MATMUL(T,PxArr(:,:,i)),TRANSPOSE(Z))/Fx(i)      
+      LxArr(:,:,i) = T - MATMUL(Kx,Z)
+      axArr(:,:,i+1) = MATMUL(T,axArr(:,:,i)) + Kx*vx(i)      
+      PxArr(:,:,i+1) = MATMUL(MATMUL(T,PxArr(:,:,i)),TRANSPOSE(LxArr(:,:,i))) + Qx
     END IF
   END DO
 
  !! BEGIN SMOOTHING LOOP!!
   DO j=N,1,-1
-    IF(loctype(j)==1) THEN
+    IF(loctype(j)==1 .OR. Fy(j)==0.0) THEN
       ry = MATMUL(TRANSPOSE(LyArr(:,:,j)),ry)
-      rx = MATMUL(TRANSPOSE(LxArr(:,:,j)),rx)
       Ny = MATMUL(MATMUL(TRANSPOSE(LyArr(:,:,j)), Ny), LyArr(:,:,j))
-      Nx = MATMUL(MATMUL(TRANSPOSE(LxArr(:,:,j)), Nx), LxArr(:,:,j))
     ELSE
       ry = TRANSPOSE(Z)*vy(j)/Fy(j) + MATMUL(TRANSPOSE(LyArr(:,:,j)),ry)
-      rx = TRANSPOSE(Z)*vx(j)/Fx(j) + MATMUL(TRANSPOSE(LxArr(:,:,j)),rx)
       Ny = MATMUL(TRANSPOSE(Z),Z)/Fy(j) + MATMUL(MATMUL(TRANSPOSE(LyArr(:,:,j)), Ny), LyArr(:,:,j))
+    END IF
+    IF(loctype(j)==1 .OR. Fx(j)==0.0) THEN
+      rx = MATMUL(TRANSPOSE(LxArr(:,:,j)),rx)
+      Nx = MATMUL(MATMUL(TRANSPOSE(LxArr(:,:,j)), Nx), LxArr(:,:,j))
+    ELSE      
+      rx = TRANSPOSE(Z)*vx(j)/Fx(j) + MATMUL(TRANSPOSE(LxArr(:,:,j)),rx)      
       Nx = MATMUL(TRANSPOSE(Z),Z)/Fx(j) + MATMUL(MATMUL(TRANSPOSE(LxArr(:,:,j)), Nx), LxArr(:,:,j))
     END IF
     predy(j,:) = RESHAPE(ayArr(:,:,j) + MATMUL(PyArr(:,:,j), ry), (/2/))

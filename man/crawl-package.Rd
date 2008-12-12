@@ -21,7 +21,7 @@
   \tabular{ll}{
     Package: \tab crawl\cr
     Type: \tab Package\cr
-    Version: \tab 1.0\cr
+    Version: \tab 1.0-1\cr
     Date: \tab 2008-12-12\cr
     License: \tab GPL (>=2) \cr
     LazyLoad: \tab yes\cr

@@ -18,18 +18,16 @@
       vnms <- all.vars(match.call())
   }
   num.mod <- length(vnms)
-  model.nms <- character(num.mod)
   AIC.vec <- numeric(num.mod)
   ks <- numeric(num.mod)
   for (i in 1:num.mod) {
       AIC.vec[i] <- round(models[[i]]$aic, 2)
-      model.nms[i] <- paste(as.character(models[[i]]$formula), collapse=" ")
       ks[i] <- length(models[[i]]$fixPar) - sum(!is.na(models[[i]]$fixPar))
   }
   deltaAIC <- round(AIC.vec - min(AIC.vec), 2)
   wAIC <- round(exp(-0.5 * deltaAIC) / sum(exp(-0.5 * deltaAIC)), 2)
   ord <- order(deltaAIC)
-  out <- data.frame(Name=vnms, Model=model.nms, k=ks, AIC=AIC.vec,
+  out <- data.frame(Name=vnms, k=ks, AIC=AIC.vec,
                     dAIC=deltaAIC, weight=wAIC)
   return(out[ord, ])
 }

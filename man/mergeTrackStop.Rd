@@ -17,7 +17,8 @@
 
 \usage{
 
-mergeTrackStop(data, stopData, Time.name="Time", interp=c("zeros", "ma0"), win=2, constCol)
+mergeTrackStop(data, stopData, Time.name="Time", interp=c("zeros", "ma0"),
+               win=2, constCol)
 
 }
 
@@ -51,9 +52,9 @@ mergeTrackStop(data, stopData, Time.name="Time", interp=c("zeros", "ma0"), win=2
 \details{
 
   Simply merges the data frames and interpolates based on the chosen
-  method. Both data frames have to use the same name for the
-  time variable. Also contains \code{stopType} which = "o" if observed
-  or "p" for interpolated.
+  method. Both data frames have to use the same name for the time
+  variable. Also contains \code{stopType} which = "o" if observed or "p"
+  for interpolated.
 
   The merged data is truncated to the first and last time in the
   location data set. Missing values in the stopping variable data set

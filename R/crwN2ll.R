@@ -7,7 +7,7 @@
     if (!is.null(err.mfX)) {
         theta.errX <- fixPar[1:n.errX]
         tau2x <- exp(2 * err.mfX %*% theta.errX)
-    } else tau2x <- 0.0
+    } else tau2x <- rep(0.0,N)
     if (!is.null(err.mfY)) {
         theta.errY <- fixPar[(n.errX + 1):(n.errX + n.errY)]
         tau2y <- exp(2 * err.mfY %*% theta.errY)
