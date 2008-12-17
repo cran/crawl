@@ -1,0 +1,208 @@
+\name{crwMLE}
+
+\alias{crwMLE}
+
+% -------------------------------------------------------------------------
+
+\title{ Fit Continuous-Time Correlated Random Walk models to animal
+  telemetry data }
+
+
+\description{ The function uses the Kalman filter to estimate movement
+paramters in a state-space version of the continuous-time movement
+model. Separate models are specified for movement portion and the
+location error portion. Each model can depend on time indexed
+covariates. A \dQuote{haul out} model where movement is allowed to
+completely stop, as well as, a random drift model can be fit with this
+function. }
+
+
+\usage{
+crwMLE(mov.model=~1, err.model, stop.model=NULL, drift.model=FALSE,
+       data, coord=c("x", "y"), polar.coord=TRUE, Time.name,
+       initial.state, theta, fixPar, control=NULL)
+}
+
+
+\arguments{
+
+  \item{mov.model}{formula object specifying the time indexed covariates
+    for movement parameters.}
+
+  \item{err.model}{A 2-element list of formula objects specifying the
+    time indexed covariates for location error parameters.}
+
+  \item{stop.model}{formula object giving the covariate for the stopping
+    portion of the model.}
+
+  \item{drift.model}{logical indicating whether or not to include a
+    random drift component.}
+
+  \item{data}{data.frame object containg telemetry and covariate data.}
+
+  \item{coord}{A 2-vector of character values giving the names of the
+    "X" and "Y" coordinates in \code{data}.}
+
+  \item{polar.coord}{logical indicating location are in latitude and
+    longitude.}
+    
+  \item{Time.name}{character indicating name of the location time column}
+
+  \item{initial.state}{list object containg the inital state of the
+    Kalman filter.}
+
+  \item{theta}{starting values for parameter optimization.}
+
+  \item{fixPar}{Values of parameters which are held fixed to the given
+    value.}
+
+  \item{control}{Control list which is passed to \code{\link{optim}}.}
+}
+
+
+\value{
+
+LIST with the following elements
+  \item{par}{Parameter maximum likelihood estimates}
+
+  \item{se}{Standard error of MLE}
+
+  \item{ci}{95\% confidance intervals for parameters}
+
+  \item{Cmat}{Parameter covariance matrix}
+
+  \item{loglik}{Maximized log-likelihood value}
+
+  \item{aic}{Model AIC value}
+
+  \item{initial.state}{Intial state provided to \code{crwMLE} for model fitting}
+
+  \item{coord}{Coordinate names provided for fitting}
+
+  \item{fixPar}{Fixed parameter values provided}
+
+  \item{convergence}{Indicator of convergence (0 = converged)}
+
+  \item{message}{Meesages given by \code{optim} during parameter optimization}
+
+  \item{stop.model}{Model provided for stopping variable}
+
+  \item{random.drift}{Logical value indicating random drift model}
+
+  \item{mov.model}{Model description for movement component}
+
+  \item{err.model}{Model description for location error component}
+
+  \item{n.par}{number of parameters}
+
+  \item{nms}{parameter names}
+
+  \item{y}{"latitude" locations}
+
+  \item{x}{"longitude" locations}
+
+  \item{n.mov}{number of movement parameters}
+
+  \item{n.errX}{number or location error parameters for "longitude" error model}
+
+  \item{n.errY}{number or location error parameters for "latitude" error model}
+
+  \item{stop.mf}{covariate for stop indication in stopping models}
+
+  \item{polar.coord}{Character vector giving coordinate names in \code{data}}
+
+  \item{runTime}{Time used to fit model}
+
+}
+
+
+\details{
+
+  A full model specification involves 4 components: a movement model, a
+  stopping model, 2 location error models, and a drift indication. The
+  movement model (\code{mov.model}) specifies how the movement
+  parameters should vary over time. This is a function of specified,
+  time-indexed, covariates. The movement parameters (sigma for velocity
+  variation and beta for velocity autocorrelation) are both modeled with
+  a log link as par = exp(eta), where eta is the linear predictor based
+  on the covariates. The \code{err.model} specification is a list of 2
+  such models, one for \dQuote{longitude} and one for \dQuote{latitude} (in that
+  order) location error. If only one location error model is given, it
+  is used for both coordinates (parameter values as well). If
+  \code{drift.model} is set to \code{TRUE}, then, 2 additional
+  parameters are estimated for the drift process, a drift variance and a
+  beta multiplier. The \code{inital.state} is a list with the following
+  elemets (with the exact names):
+
+  \item{\code{a1.y}}{A vector with initial state values for the
+  \dQuote{latitude} coordinate. It have 2 elemets (location at time 1, velocity
+  at time 1) for non-drift models and 3 elemets for drift models
+  (location at time 1, velocity at time 1, drift velocity at time 1) for
+  driftmodels.}
+
+  \item{\code{P1.y}}{Covarince matrix for the state at time 1 (measure
+    of uncertainty for your inital state) \code{a1.y}.}
+
+  \item{\code{a1.x}}{Same as \code{a1.y}, but in the \dQuote{longitude}
+    coordinate.}
+
+  \item{\code{P1.x}}{Same as \code{P1.y}, but in the \dQuote{longitude}
+    coordinate.}
+
+  \code{theta} and \code{fixPar} are vectors with the appropriate number
+  or parameters. \code{theta} contains only those paraemters which are
+  to be estimated, while \code{fixPar} contains all parameter values
+  with \code{NA} for parameters which are to be estimated.
+
+  The data set specified by \code{data} must contain a numeric column which is
+  used as the time index for analysis. The column name is specified by the
+  \code{Time.name} argument. Also, for stopping models, the stopping covariate
+  must be between 0 and 1 inclusive, with 1 representing complete stop of the
+  animal (no true movement, however, location error can still occur) and 0
+  represent unhindered movement. The coordinate location should have \code{NA}
+  where no location is recorded, but there is a change in the movment
+  covariates.
+
+}
+
+
+\seealso{ \code{\link{northernFurSeal}} for additional examples. }
+
+% -------------------------------------------------------------------------
+
+\examples{
+
+data(harborSeal)
+head(harborSeal)
+## Calculate Log multipliers for Argos error
+argosClasses <- c("3", "2", "1", "0", "A", "B")
+ArgosMultFactors <- data.frame(Argos_loc_class=argosClasses,
+                               errX=log(c(1, 1.5, 4, 14, 5.21, 20.78)),
+                               errY=log(c(1, 1.5, 4, 14, 11.08, 31.03)))
+hsNew <- merge(harborSeal, ArgosMultFactors, by=c("Argos_loc_class"), all=TRUE)
+hsNew <- hsNew[order(hsNew$Time), ]
+head(hsNew)
+
+## Initial state values
+initial.dry <- list(
+  a1.x = c(harborSeal$longitude[1],0),
+  a1.y = c(harborSeal$latitude[1],0),
+  P1.x = diag(c(1,1)),
+  P1.y = diag(c(1,1))
+)
+
+##Fit model as given in Johnson et al. (2008) Ecology 89:1208-1215
+fit1 <- crwMLE(
+  mov.model=~1, err.model=list(x=~errX, y=~errY), stop.model=~DryTime,
+  data=hsNew, coord=c("longitude","latitude"), Time.name="Time",
+  initial.state=initial.dry, fixPar=c(NA, 1, NA, 1, NA, NA, NA),
+  control=list(maxit=2000, trace=1, REPORT=1)
+)
+
+fit1
+str(fit1)
+
+}
+
+
+\author{Devin S. Johnson}
