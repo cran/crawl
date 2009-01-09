@@ -1,7 +1,5 @@
 "crwPredictPlot" <- function(object, plotType="ll")
 {
-    if(!attr(object,"flat")) Time <- object$originalData[,attr(object,"Time.name")]
-    else Time <- object[,attr(object,"Time.name")]
     y.c <- attr(object, "coord")['y']
     x.c <- attr(object, "coord")['x']
     if (!attr(object, "flat")) {
@@ -13,7 +11,7 @@
         yvals <- object$originalData[, y.c]
         mu.x <- object$alpha.hat.x[, 1]
         mu.y <- object$alpha.hat.y[, 1]
-        Time <- object$originalData$Time
+        Time <- object$originalData[, attr(object, "Time.name")]
     } else {
         mu.xUp <- object$mu.x + 1.96 * object$se.mu.x
         mu.xLo <- object$mu.x - 1.96 * object$se.mu.x
@@ -23,7 +21,7 @@
         yvals <- object[, y.c]
         mu.x <- object$mu.x
         mu.y <- object$mu.y
-        Time <- object$Time
+        Time <- object[, attr(object, "Time.name")]
     }
 
     mu.y.mx <- max(pmax(mu.yUp, yvals, na.rm=TRUE))

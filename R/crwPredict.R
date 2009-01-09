@@ -16,13 +16,13 @@
 
     ## Data setup ##
     if (!is.null(predTime)) {
-        origTime <- data[,tn]
+        origTime <- data[, tn]
         if (is.null(data$locType)) data$locType <- "o"
         predData <- data.frame(predTime, "p")
         names(predData) <- c(tn, "locType")
         data <- merge(data, predData,
                       by=c(tn, "locType"), all=TRUE)
-        dups <- duplicated(data[,tn])
+        dups <- duplicated(data[, tn])
         data <- data[!dups, ]
         mov.mf <- as.matrix(expandPred(origTime, mov.mf, predTime))
         if (stopMod) stop.mf <- as.matrix(expandPred(origTime, stop.mf, predTime))
