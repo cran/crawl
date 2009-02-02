@@ -21,7 +21,7 @@
 crwMLE(mov.model=~1, err.model, stop.model=NULL, drift.model=FALSE,
        data, coord=c("x", "y"), polar.coord=TRUE, Time.name,
        initial.state, theta, fixPar, method="L-BFGS-B", control=NULL,
-       initialSANN=NULL)
+       initialSANN=NULL, attempts=1)
 }
 
 
@@ -62,7 +62,8 @@ crwMLE(mov.model=~1, err.model, stop.model=NULL, drift.model=FALSE,
   \item{control}{Control list which is passed to \code{\link{optim}}.}
   
   \item{initialSANN}{Control list for \code{\link{optim}} when simulated 
-                     annealing is used for obtaining start values. See details}  
+                     annealing is used for obtaining start values. See details}
+  \item{attempts}{The number of times likelihood optimization will be attempted}
 }
 
 
@@ -70,7 +71,9 @@ crwMLE(mov.model=~1, err.model, stop.model=NULL, drift.model=FALSE,
 
   A list with the following elements:
 
-  \item{par}{Parameter maximum likelihood estimates}
+  \item{par}{Parameter maximum likelihood estimates (including fixed parameters)}
+  
+  \item{estPar}{MLE without fixed parameters}
 
   \item{se}{Standard error of MLE}
 
@@ -106,10 +109,6 @@ crwMLE(mov.model=~1, err.model, stop.model=NULL, drift.model=FALSE,
 
   \item{nms}{parameter names}
 
-  \item{y}{"latitude" locations}
-
-  \item{x}{"longitude" locations}
-
   \item{n.mov}{number of movement parameters}
 
   \item{n.errX}{number or location error parameters for "longitude"
@@ -126,6 +125,8 @@ crwMLE(mov.model=~1, err.model, stop.model=NULL, drift.model=FALSE,
   \item{runTime}{Time used to fit model}
   
   \item{init}{Initial values for parameter optimization}
+  
+  \item{data}{Original data.frame used to fit the model}
 
 }
 

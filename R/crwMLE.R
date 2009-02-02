@@ -1,7 +1,7 @@
 "crwMLE" <- function(mov.model=~1, err.model=NULL, stop.model=NULL, drift.model=FALSE,
                      data, coord=c("x", "y"), polar.coord=TRUE, Time.name,
                      initial.state, theta, fixPar, method="L-BFGS-B", control=NULL,
-                     initialSANN=NULL)
+                     initialSANN=NULL, attempts=1)
 {
     st <- Sys.time()
     if (missing(Time.name)) stop("Argument 'Time.name' missing. Please specify")
@@ -88,45 +88,55 @@
       if (is.na(fixPar[n.par])) {
           lower <- c(rep(-Inf, length(theta)-1), 0)
       } else lower <- -Inf 
-    }     
-    if (!is.null(initialSANN) & method!='SANN') {
-      init <- optim(theta, crwN2ll, method='SANN',
-                 fixPar=fixPar, y=y.lik, x=x.lik, loctype=loctype,
-                 delta=c(diff(data[, Time.name]), 1), a1.y=initial.state$a1.y,
-                 a1.x=initial.state$a1.x, P1.x=initial.state$P1.x,
-                 P1.y=initial.state$P1.y, lonAdj=lonAdjVals, mov.mf=mov.mf,
-                 err.mfX=err.mfX, err.mfY=err.mfY, stop.mf=stop.mf,
-                 n.mov=n.mov, n.errX=n.errX, n.errY=n.errY, stopMod=stopMod,
-                 driftMod=driftMod, control=initialSANN)
-    } else init <- list(par=theta)         
-    mle <- optim(init$par, crwN2ll, method=method, hessian=TRUE, lower=lower,
-                 fixPar=fixPar, y=y.lik, x=x.lik, loctype=loctype,
-                 delta=c(diff(data[, Time.name]), 1), a1.y=initial.state$a1.y,
-                 a1.x=initial.state$a1.x, P1.x=initial.state$P1.x,
-                 P1.y=initial.state$P1.y, lonAdj=lonAdjVals, mov.mf=mov.mf,
-                 err.mfX=err.mfX, err.mfY=err.mfY, stop.mf=stop.mf,
-                 n.mov=n.mov, n.errX=n.errX, n.errY=n.errY, stopMod=stopMod,
-                 driftMod=driftMod, control=control)
-    par <- fixPar
-    par[is.na(fixPar)] <- mle$par
-    Cmat <- matrix(NA, n.par, n.par)
-    C.tmp <- try(2 * solve(mle$hessian), silent=TRUE)
-    if (inherits(C.tmp, "try-error")) {
-        cat("\nCannot calculate covariance matrix\n\n")
-    } else Cmat[is.na(fixPar), is.na(fixPar)] <- C.tmp
-    se <- sqrt(diag(Cmat))
-    ci.l <- par - 1.96 * se
-    ci.u <- par + 1.96 * se
-    out <- list(par=par, se=se, ci=cbind(L=ci.l, U=ci.u), Cmat=Cmat,
-                loglik=-mle$value / 2, aic=mle$value + 2 * sum(is.na(fixPar)),
-                initial.state=initial.state, coord=coord, fixPar=fixPar,
-                convergence=mle$convergence, message=mle$message,
-                stop.model=stop.model, random.drift=drift.model,
-                mov.model=mov.model, err.model=err.model, n.par=n.par, nms=nms,
-                y=y, x=x, n.mov=n.mov, n.errX=n.errX, n.errY=n.errY,
-                mov.mf=mov.mf, err.mfX=err.mfX, err.mfY=err.mfY, stop.mf=stop.mf,
-                polar.coord=polar.coord, Time.name=Time.name, init=init,
-                runTime=difftime(Sys.time(), st))
-    class(out) <- c("crwFit")
-    return(out)
+    }
+    checkFit <- 1
+    thetaAttempt <- theta
+    while(attempts > 0 & checkFit == 1) {
+      if (!is.null(initialSANN) & method!='SANN') {
+         init <- optim(thetaAttempt, crwN2ll, method='SANN',
+                       fixPar=fixPar, y=y.lik, x=x.lik, loctype=loctype,
+                       delta=c(diff(data[, Time.name]), 1), a1.y=initial.state$a1.y,
+                       a1.x=initial.state$a1.x, P1.x=initial.state$P1.x,
+                       P1.y=initial.state$P1.y, lonAdj=lonAdjVals, mov.mf=mov.mf,
+                       err.mfX=err.mfX, err.mfY=err.mfY, stop.mf=stop.mf,
+                       n.mov=n.mov, n.errX=n.errX, n.errY=n.errY, stopMod=stopMod,
+                       driftMod=driftMod, control=initialSANN)
+         thetaAttempt <- init$par
+      } else init <- list(par=thetaAttempt)
+      mle <- try(optim(init$par, crwN2ll, method=method, hessian=TRUE, lower=lower,
+                   fixPar=fixPar, y=y.lik, x=x.lik, loctype=loctype,
+                   delta=c(diff(data[, Time.name]), 1), a1.y=initial.state$a1.y,
+                   a1.x=initial.state$a1.x, P1.x=initial.state$P1.x,
+                   P1.y=initial.state$P1.y, lonAdj=lonAdjVals, mov.mf=mov.mf,
+                   err.mfX=err.mfX, err.mfY=err.mfY, stop.mf=stop.mf,
+                   n.mov=n.mov, n.errX=n.errX, n.errY=n.errY, stopMod=stopMod,
+                   driftMod=driftMod, control=control), silent=TRUE)
+      attempts <- attempts - 1
+      checkFit <- 1.0*(inherits(mle, 'try-error'))
+    }
+    if(inherits(mle, 'try-error')) return(mle)
+    else {
+       par <- fixPar
+       par[is.na(fixPar)] <- mle$par
+       Cmat <- matrix(NA, n.par, n.par)
+       C.tmp <- try(2 * solve(mle$hessian), silent=TRUE)
+       if (inherits(C.tmp, "try-error")) {
+          cat("\nCannot calculate covariance matrix\n\n")
+       } else Cmat[is.na(fixPar), is.na(fixPar)] <- C.tmp
+       se <- sqrt(diag(Cmat))
+       ci.l <- par - 1.96 * se
+       ci.u <- par + 1.96 * se
+       out <- list(par=par, estPar=mle$par, se=se, ci=cbind(L=ci.l, U=ci.u), Cmat=Cmat,
+                   loglik=-mle$value / 2, aic=mle$value + 2 * sum(is.na(fixPar)),
+                   initial.state=initial.state, coord=coord, fixPar=fixPar,
+                   convergence=mle$convergence, message=mle$message,
+                   stop.model=stop.model, random.drift=drift.model,
+                   mov.model=mov.model, err.model=err.model, n.par=n.par, nms=nms,
+                   n.mov=n.mov, n.errX=n.errX, n.errY=n.errY,
+                   mov.mf=mov.mf, err.mfX=err.mfX, err.mfY=err.mfY, stop.mf=stop.mf,
+                   polar.coord=polar.coord, Time.name=Time.name, init=init, data=data,
+                   runTime=difftime(Sys.time(), st))
+       class(out) <- c("crwFit")
+       return(out)
+    }
 }

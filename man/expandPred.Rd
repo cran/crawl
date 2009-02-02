@@ -18,32 +18,36 @@
 
 \usage{
 
-expandPred(origTime, x, predTime)
+expandPred(x, Time='Time', predTime, time.col=FALSE)
 
 }
 
 
 \arguments{
 
-  \item{origTime}{Original time index for the data to be expanded.}
-
   \item{x}{Data to be expanded.}
+  
+  \item{Time}{Either a character naming the column which contains original time
+              values, or a numeric vector of original times}
 
-  \item{predTime}{prediction times to expand data.}
+  \item{predTime}{prediction times to expand data}
+  
+  \item{time.col}{Logical value indicating whether to attach the new times to
+                  the expanded data}
 
 }
 
 
-\value{ data.frame expanded by \code{predTime}. }
+\value{ data.frame expanded by \code{predTime}}
 
 % -------------------------------------------------------------------------
 
 \examples{
-
+#library(crawl)
 origTime <- c(1:10)
 x <- cbind(rnorm(10), c(21:30))
 predTime <- seq(1,10, by=0.25)
-expandPred(origTime, x, predTime)
+expandPred(x, Time=origTime, predTime, time.col=TRUE)
 
 }
 
