@@ -81,7 +81,7 @@ initial.drift <- list(a1.x=c(189.686, 0, 0), a1.y=c(57.145, 0, 0),
 ##Fit random drift model
 fit <- crwMLE(mov.model=~1, err.model=list(x=~errX, y=~errY), drift.model=TRUE,
               data=nfsNew, coord=c("longitude", "latitude"),
-              Time.name="Time", initial.state=initial.drift,
+              Time.name="Time", initial.state=initial.drift, polar.coord=TRUE,
               fixPar=c(NA, 1, NA, 1, NA, NA, NA,NA),
               control=list(maxit=2000,trace=1, REPORT=10))
 
@@ -93,7 +93,6 @@ str(predObj)
 predObj <- as.flat(predObj)
 head(predObj)
 crwPredictPlot(predObj)
-
 }
 
 

@@ -9,7 +9,7 @@
 \title{Fit Continuous-Time Correlated Random Walk models to animal movement data}
 
 
-\description{ The (C)orrelated (RA)ndom (W)alk (L)ibrary was designed
+\description{ The (C)orrelated (RA)ndom (W)alk (L)ibrary of R functions was designed
   for fitting continuous-time correlated random walk (CTCRW) models with
   time indexed covariates. The model is fit using the Kalman-Filter on a
   state space version of the continuous-time staochistic movement
@@ -21,8 +21,8 @@
   \tabular{ll}{
     Package: \tab crawl\cr
     Type: \tab Package\cr
-    Version: \tab 1.0-2\cr
-    Date: \tab 2008-01-10\cr
+    Version: \tab 1.0-4\cr
+    Date: \tab 2008-05-05\cr
     License: \tab GPL (>=2) \cr
     LazyLoad: \tab yes\cr
   }

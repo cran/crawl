@@ -10,8 +10,8 @@
     stopEnd <- max(stopData[, Time.name])
     trackStart <- min(data[, Time.name])
     trackEnd <- max(data[, Time.name])
-    Start <- min(stopStart, stopStart)
-    End <- max(stopEnd, trackEnd)
+    Start <- max(stopStart, trackStart)
+    End <- min(stopEnd, trackEnd)
     if (!missing(constCol)) constVal <- data[1, constCol]
     mergeData <- data.frame(seq(floor(Start), ceiling(End), 1))
     names(mergeData) <- Time.name

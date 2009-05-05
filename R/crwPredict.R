@@ -43,6 +43,7 @@
           lonAdjVals <- lonAdjVals[!is.na(lonAdjVals)][cumsum(!is.na(lonAdjVals))]
         }
     } else lonAdjVals <- rep(1, nrow(data))
+    data$locType[data[,tn]%in%predTime] <- 'p'
     delta <- c(diff(data[, tn]), 1)
     a1.x <- object.crwFit$initial.state$a1.x
     P1.x <- object.crwFit$initial.state$P1.x
@@ -69,8 +70,9 @@
     if (stopMod) {
         stop.mf <- object.crwFit$stop.mf
         theta.stop <- par[(n.errX + n.errY + 2 * n.mov + 1)]
-        b <- ifelse(stop.mf != 1, b /((1 - stop.mf)^exp(theta.stop)), 9999)
-        stay[stop.mf == 1] <- 1
+        b <- b / ((1 - stop.mf) ^ exp(theta.stop))
+        b <- ifelse(b==Inf, 9999, b) 
+        stay <- ifelse(b==9999, 1, 0)
     }
     if (driftMod) {
         theta.drift <- par[(n.errX + n.errY + 2 * n.mov + 1):

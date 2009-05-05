@@ -19,7 +19,7 @@
 
 \usage{
 crwMLE(mov.model=~1, err.model, stop.model=NULL, drift.model=FALSE,
-       data, coord=c("x", "y"), polar.coord=TRUE, Time.name,
+       data, coord=c("x", "y"), polar.coord, Time.name,
        initial.state, theta, fixPar, method="L-BFGS-B", control=NULL,
        initialSANN=NULL, attempts=1)
 }
@@ -39,12 +39,12 @@ crwMLE(mov.model=~1, err.model, stop.model=NULL, drift.model=FALSE,
   \item{drift.model}{logical indicating whether or not to include a
     random drift component.}
 
-  \item{data}{data.frame object containg telemetry and covariate data.}
+  \item{data}{data.frame object containg telemetry and covariate data. A 'SpatialPointsDataFrame' object from the package 'sp' will also be accepted. In which case the \code{polar.coord} and \code{coord} values will be taken from the spatial data set and ignored in the arguments.}
 
   \item{coord}{A 2-vector of character values giving the names of the
     "X" and "Y" coordinates in \code{data}.}
 
-  \item{polar.coord}{logical indicating location are in latitude and
+  \item{polar.coord}{logical indicating location are in degrees latitude and
     longitude.}
 
   \item{Time.name}{character indicating name of the location time column}
@@ -119,8 +119,7 @@ crwMLE(mov.model=~1, err.model, stop.model=NULL, drift.model=FALSE,
 
   \item{stop.mf}{covariate for stop indication in stopping models}
 
-  \item{polar.coord}{Character vector giving coordinate names in
-    \code{data}}
+  \item{polar.coord}{Logical indicating coordinates are polar latitude and longitude}
 
   \item{runTime}{Time used to fit model}
   
@@ -146,7 +145,11 @@ crwMLE(mov.model=~1, err.model, stop.model=NULL, drift.model=FALSE,
   given, it is used for both coordinates (parameter values as well). If
   \code{drift.model} is set to \code{TRUE}, then, 2 additional
   parameters are estimated for the drift process, a drift variance and a
-  beta multiplier. The \code{inital.state} is a list with the following
+  beta multiplier. If \code{polar.coord=TRUE} then the ad-hoc logitude correction factor
+  described by Johnson et al. (2008) (Ecology 89:1208-1215) is used to adjust 
+  the variance scale for the longitude mdoel.
+  
+  The \code{inital.state} is a list with the following
   elemets (with the exact names):
 
   \code{a1.y}  A vector with initial state values for the
@@ -216,7 +219,7 @@ initial.dry <- list(
 
 fit1 <- crwMLE(
   mov.model=~1, err.model=list(x=~errX, y=~errY), stop.model=~DryTime,
-  data=hsNew, coord=c("longitude","latitude"), Time.name="Time",
+  data=hsNew, coord=c("longitude","latitude"), Time.name="Time", polar.coord=TRUE,
   initial.state=initial.dry, fixPar=c(NA, 1, NA, 1, NA, NA, NA),
   control=list(maxit=2000, trace=1, REPORT=1)
 )
@@ -227,7 +230,7 @@ str(fit1)
 ##Use simulated annealing to obtain start value
 fit2 <- crwMLE(
   mov.model=~1, err.model=list(x=~errX, y=~errY), stop.model=~DryTime,
-  data=hsNew, coord=c("longitude","latitude"), Time.name="Time",
+  data=hsNew, coord=c("longitude","latitude"), polar.coord=TRUE, Time.name="Time",
   initial.state=initial.dry, fixPar=c(NA, 1, NA, 1, NA, NA, NA),
   control=list(maxit=2000, trace=1, REPORT=1),
   initialSANN=list(maxit=100, temp=5, tmax=5, trace=1, REPORT=2)
