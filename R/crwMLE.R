@@ -1,10 +1,19 @@
 "crwMLE" <- function(mov.model=~1, err.model=NULL, stop.model=NULL, drift.model=FALSE,
-                     data, coord=c("x", "y"), polar.coord=TRUE, Time.name,
+                     data, coord=c("x", "y"), polar.coord, Time.name,
                      initial.state, theta, fixPar, method="L-BFGS-B", control=NULL,
                      initialSANN=NULL, attempts=1)
 {
     st <- Sys.time()
     if (missing(Time.name)) stop("Argument 'Time.name' missing. Please specify")
+
+    ### Transform 'sp' package SpatialPointsDataFrame
+    if(inherits(data, "SpatialPoints")) {
+	polar.coord <- "+proj=longlat" %in% strsplit(proj4string(data), " ")[[1]]
+	coordVals <- as.data.frame(coordinates(data))
+	coord <- names(coordVals)
+	data <- cbind(slot(data,"data"), coordVals)
+    }
+
     ## SET UP MODEL MATRICES AND PARAMETERS ##
     errMod <- !is.null(err.model)
     stopMod <- !is.null(stop.model)

@@ -18,9 +18,9 @@
     stay <- rep(0, N)
     if (stopMod) {
         theta.stop <- fixPar[(n.errX + n.errY + 2 * n.mov + 1)]
-        b[stop.mf != 1] <- b[stop.mf != 1] / ((1 - stop.mf[stop.mf != 1]) ^
-                               exp(theta.stop))
-        stay[stop.mf == 1] <- 1
+        b <- b / ((1 - stop.mf) ^ exp(theta.stop))
+        b <- ifelse(b==Inf, 9999, b) 
+        stay <- ifelse(b==9999, 1, 0)
     }
     if (driftMod) {
         theta.drift <- fixPar[(n.errX + n.errY + 2 * n.mov + 1):
