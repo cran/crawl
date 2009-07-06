@@ -1,5 +1,5 @@
 `crwSimulator` <-
-function(object.crwFit, predTime=NULL, parIS=1000, df=Inf, scale=1)
+function(object.crwFit, predTime=NULL, method="IS", parIS=1000, df=Inf, grid.eps=1, crit=2.5, scale=1)
 {
    ## Model definition/parameters ##
    data <- object.crwFit$data
@@ -57,6 +57,6 @@ function(object.crwFit, predTime=NULL, parIS=1000, df=Inf, scale=1)
                 coord=object.crwFit$coord, Time.name=object.crwFit$Time.name)
     names(out)[28] <- object.crwFit$Time.name
    class(out) <- 'crwSimulator'
-   if(parIS>1) out <- crwSamplePar(out, size=parIS, df=df, scale=scale)
+   if(parIS>1) out <- crwSamplePar(out, method=method, size=parIS, df=df, grid.eps=grid.eps, crit=crit, scale=scale)
    return(out)
 }

@@ -21,20 +21,26 @@
 
 
 \usage{
-crwSamplePar(object.sim, size=1000, df=Inf, scale=1)
+crwSamplePar(object.sim, method="IS", size=1000, df=Inf, grid.eps=1, crit=2.5, scale=1)
 
 }
 
 
 \arguments{
   \item{object.sim}{A simulation object from \code{\link{crwSimulator}}.}
-
+  
+  \item{method}{Method for obtaining weights for movement parameter samples}
   
   \item{size}{Size of the parameter importance sample}
   
   \item{df}{Degrees of freedom for the t approximation to the parameter posterior}
   
+  \item{grid.eps}{Grid size for \code{method="quadrature"}}
+  
+  \item{crit}{Criterion for deciding "significance" of quadrature points (difference in log-likelihood)}
+  
   \item{scale}{Scale multiplier for the covariance matrix of the t approximation}
+
 
 }
 
@@ -104,7 +110,8 @@ crwSamplePar(object.sim, size=1000, df=Inf, scale=1)
 
   The crwSimulator function produces a list and preprocesses the necessary
   components for repeated track simulation from a fitted CTCRW model from
-  \code{\link{crwMLE}}. If df=Inf (default) then a multivariate normal distribution
+  \code{\link{crwMLE}}. If method="quadrature", then a grid is used based on \code{grid.eps}. 
+  If df=Inf (default) then a multivariate normal distribution
   is used to approximate the parameter posterior.  
 
 }

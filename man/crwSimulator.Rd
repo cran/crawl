@@ -21,7 +21,7 @@
 
 
 \usage{
-crwSimulator(object.crwFit, predTime=NULL, parIS=1000, df=Inf, scale=1)
+crwSimulator(object.crwFit, predTime=NULL, method="IS", parIS=1000, df=Inf, grid.eps=1, crit=2.5, scale=1)
 
 }
 
@@ -31,9 +31,15 @@ crwSimulator(object.crwFit, predTime=NULL, parIS=1000, df=Inf, scale=1)
 
   \item{predTime}{vector of additional prediction times.}
   
+  \item{method}{Method for obtaining weights for movement parameter samples}
+  
   \item{parIS}{Size of the parameter importance sample}
   
   \item{df}{Degrees of freedom for the t approximation to the parameter posterior}
+  
+  \item{grid.eps}{Grid size for \code{method="quadrature"}}
+  
+  \item{crit}{Criterion for deciding "significance" of quadrature points (difference in log-likelihood)}
   
   \item{scale}{Scale multiplier for the covariance matrix of the t approximation}
 
@@ -105,8 +111,14 @@ crwSimulator(object.crwFit, predTime=NULL, parIS=1000, df=Inf, scale=1)
 
   The crwSimulator function produces a list and preprocesses the necessary
   components for repeated track simulation from a fitted CTCRW model from
-  \code{\link{crwMLE}}. If df=Inf (default) then a multivariate normal distribution
-  is used to approximate the parameter posterior. If \code{object.crwFit} was fitted with 
+  \code{\link{crwMLE}}. The \code{method} argument can be one 
+  of \code{"IS"} or \code{"quadrature"}. If method=IS is chosen standard importance sampling will 
+  be used to calculate the appropriate weights via t proposal with df degrees of freedom. 
+  If df=Inf (default) then a multivariate normal distribution
+  is used to approximate the parameter posterior. If \code{method="quadrature"}, then a regular grid
+  over the posterior is used to calculate the weights. The argument \code{grid.eps} controls the quadrature 
+  grid. The arguments are approximately the upper and lower limit interms of standard deviations of the posterior. 
+  The default is \code{grid.eps}, in units of 1sd. If \code{object.crwFit} was fitted with 
   \code{crwArgoFilter}, then the returned list will also include \code{p.out}, which is the 
   approximate probability that the observation is an outlier. 
 
