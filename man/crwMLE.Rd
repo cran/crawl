@@ -18,10 +18,10 @@
 
 
 \usage{
-crwMLE(mov.model=~1, err.model, stop.model=NULL, drift.model=FALSE,
-       data, coord=c("x", "y"), polar.coord, Time.name,
-       initial.state, theta, fixPar, method="L-BFGS-B", control=NULL,
-       initialSANN=NULL, attempts=1)
+crwMLE(mov.model=~1, err.model=NULL, stop.model=NULL, drift.model=FALSE,
+                     data, coord=c("x", "y"), polar.coord, Time.name,
+                     initial.state, theta, fixPar, method="L-BFGS-B", control=NULL, lower, upper,
+                     initialSANN=NULL, attempts=1)
 }
 
 
@@ -60,6 +60,10 @@ crwMLE(mov.model=~1, err.model, stop.model=NULL, drift.model=FALSE,
   \item{method}{Optimization method that is passed to \code{\link{optim}}.}
 
   \item{control}{Control list which is passed to \code{\link{optim}}.}
+  
+  \item{lower}{Lower bounds on parameter space}
+  
+  \item{upper}{Upper bounds on parameter space}
   
   \item{initialSANN}{Control list for \code{\link{optim}} when simulated 
                      annealing is used for obtaining start values. See details}
@@ -230,7 +234,7 @@ str(fit1)
 ##Use simulated annealing to obtain start value
 fit2 <- crwMLE(
   mov.model=~1, err.model=list(x=~errX, y=~errY), stop.model=~DryTime,
-  data=hsNew, coord=c("longitude","latitude"), polar.coord=TRUE, Time.name="Time",
+  data=hsNew, coord=c("longitude","latitude"), Time.name="Time", polar.coord=TRUE,
   initial.state=initial.dry, fixPar=c(NA, 1, NA, 1, NA, NA, NA),
   control=list(maxit=2000, trace=1, REPORT=1),
   initialSANN=list(maxit=100, temp=5, tmax=5, trace=1, REPORT=2)

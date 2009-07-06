@@ -1,13 +1,20 @@
 \name{crawl-internal}
 
 \alias{print.crwFit}
+\alias{rmvtt}
+\alias{ps1}
+\alias{ps2}
+\alias{ps3}
+\alias{ps4}
+\alias{getQT}
+
 
 % -------------------------------------------------------------------------
 
 \title{Internal crawl objects}
 
 
-\description{Internal crawl objects.}
+\description{Internal crawl objects and functions.}
 
 
 \details{ These are not to be called by the user. }

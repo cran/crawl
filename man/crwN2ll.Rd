@@ -64,6 +64,7 @@ crwN2ll(theta, fixPar, y, x, loctype, delta, a1.y, a1.x, P1.x, P1.y,
   \item{stopMod}{Logical. indicates wheteher a stop model is specified.}
 
   \item{driftMod}{Logical. inicates whether a drift model is specified.}
+    
 
 }
 

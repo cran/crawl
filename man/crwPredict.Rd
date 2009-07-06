@@ -5,22 +5,23 @@
 % -------------------------------------------------------------------------
 
 \title{ Predict animal locations and velocities using a fitted CTCRW
-  model }
+  model and calculate measurement error fit statistics}
 
 
 \description{
 
-  The \code{crwPredict} function uses a fitted model object from
+  The \code{crwMEfilter} function uses a fitted model object from
   \code{crwMLE} to predict animal locations (with estimated uncertainty)
   at times in the original data set and supplimented by times in
   \code{predTime}. If \code{speedEst} is set to \code{TRUE}, then animal
-  log-speed is also estimated.
+  log-speed is also estimated. In addition, the measurement error shock detection filter of 
+  de Jong and Penzer (1998) is also calculated to provide a measure for outlier detection.
 
 }
 
 
 \usage{
-crwPredict(object.crwFit, predTime=NULL, speedEst=FALSE, flat=FALSE)
+crwPredict(object.crwFit, predTime=NULL, speedEst=FALSE, flat=TRUE)
 
 }
 
@@ -34,7 +35,6 @@ crwPredict(object.crwFit, predTime=NULL, speedEst=FALSE, flat=FALSE)
 
   \item{flat}{logical. Should the result be returned as a flat
     data.frame.}
-
 }
 
 
@@ -61,10 +61,12 @@ crwPredict(object.crwFit, predTime=NULL, speedEst=FALSE, flat=FALSE)
   each time and standard errors based on delta method. If coordinates
   are polar, units are meters/unit \code{Time}, else, units are those
   specified by the coordinates.}
+  
+  \item{fit.test}{A data.frame of chi-square fit (df=2) statistics and naive (pointwise) p-values.} 
 
 If \code{flat} is set to \code{TRUE} then a data set is returned with
 the columns of the original data plus the state estimates, standard
-errors (se) and the speed estimates.
+errors (se), speed estimates, and the fit statistics and naive p-values.
 
 }
 
@@ -76,8 +78,12 @@ errors (se) and the speed estimates.
 
 }
 
+\references{
+de Jong, P. and Penzer, J. (1998) Diagnosing shocks in time series. Journal of the American 
+Statistical Association 93:796-806.
+}
 
-\seealso{ See \code{\link{northernFurSeal}} for example. }
+%\seealso{ See \code{\link{northernFurSeal}} for example. }
 
 % -------------------------------------------------------------------------
 

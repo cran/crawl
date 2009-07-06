@@ -1,9 +1,9 @@
-SUBROUTINE crwn2ll(tau2y, tau2x, sig2, b, bd, sig2d, delta, x, y, loctype, stay, &
+SUBROUTINE crwn2ll(tau2y, tau2x, Qmat, Tmat, x, y, loctype, stay, &
                     ay, ax, Py, Px, lonadj, N, lly, llx)
   INTEGER N
   INTEGER loctype(N), stay(N)
-  DOUBLE PRECISION lly, llx, tau2y(N), tau2x(N)
-  DOUBLE PRECISION sig2(N), b(N), bd, sig2d, delta(N), x(N), y(N), lonadj(N)
+  DOUBLE PRECISION lly, llx, tau2y(N), tau2x(N), Qmat(N,3), Tmat(N,2)
+  DOUBLE PRECISION x(N), y(N), lonadj(N)
   DOUBLE PRECISION ay(2,1), ax(2,1), Py(2,2), Px(2,2)
   DOUBLE PRECISION vy, vx, Fy, Fx
   DOUBLE PRECISION Z(1,2)
@@ -26,13 +26,13 @@ SUBROUTINE crwn2ll(tau2y, tau2x, sig2, b, bd, sig2d, delta, x, y, loctype, stay,
       T(1,2) = 0.0
       T(2,2) = 0.0
     ELSE
-      Qy(1,1) = (sig2(i)/(b(i)*b(i)))*(delta(i) - 2*(1-exp(-b(i)*delta(i)))/b(i) + (1-exp(-2*b(i)*delta(i)))/(2*b(i)))
-      Qy(2,1) = (sig2(i)/(b(i)*b(i)))*(1-2*exp(-b(i)*delta(i))+exp(-2*b(i)*delta(i)))/2
+      Qy(1,1) = Qmat(i,1)
+      Qy(2,1) = Qmat(i,2)
       Qy(1,2) = Qy(2,1)
-      Qy(2,2) = (sig2(i)/b(i))*(1-exp(-2*b(i)*delta(i)))/2
+      Qy(2,2) = Qmat(i,3)
       Qx = Qy/(lonadj(i)*lonadj(i))
-      T(1,2) = (1-exp(-b(i)*delta(i)))/b(i)
-      T(2,2) = exp(-b(i)*delta(i))
+      T(1,2) = Tmat(i,1)
+      T(2,2) = Tmat(i,2)
     END IF
 
    !! GENERAL KF LOOP !!
@@ -42,8 +42,8 @@ SUBROUTINE crwn2ll(tau2y, tau2x, sig2, b, bd, sig2d, delta, x, y, loctype, stay,
       ay = MATMUL(T,ay)
       Py = MATMUL(MATMUL(T,Py),TRANSPOSE(T)) + Qy
     ELSE
-      vy = y(i)-ay(1,1)
-      lly = lly - (log(Fy) + vy*vy/Fy)/2
+      vy = y(i)-ay(1,1)   	
+      lly = lly - (log(Fy) + vy*vy/Fy)/2    
       Ky = MATMUL(MATMUL(T,Py),TRANSPOSE(Z))/Fy
       Ly = T - MATMUL(Ky,Z)
       ay = MATMUL(T,ay) + Ky*vy
