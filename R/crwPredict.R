@@ -1,5 +1,4 @@
-"crwPredict" <- function(object.crwFit, predTime=NULL,
-                         speedEst=FALSE, flat=FALSE)
+"crwPredict" <- function(object.crwFit, predTime=NULL, speedEst=FALSE, flat=TRUE)
 {
     ## Model definition/parameters ##
     data <- object.crwFit$data
@@ -27,7 +26,7 @@
         names(predData) <- c(tn, "locType")
         data <- merge(data, predData,
                       by=c(tn, "locType"), all=TRUE)
-        dups <- duplicated(data[, tn])
+        dups <- duplicated(data[, tn]) #& data[,"locType"]==1
         data <- data[!dups, ]
         mov.mf <- as.matrix(expandPred(x=mov.mf, Time=origTime, predTime=predTime))
         if (stopMod) stop.mf <- as.matrix(expandPred(x=stop.mf, Time=origTime, predTime=predTime))
@@ -54,45 +53,47 @@
     loctype <- ifelse(is.na(x) | is.na(y), 1, 0)
     y <- ifelse(loctype == 1, 9999, y)
     x <- ifelse(loctype == 1, 9999, x)
-
-    if (!is.null(err.mfX)) {
-        theta.errX <- par[1:n.errX]
-        tau2x <- exp(2 * err.mfX %*% theta.errX)
-    } else tau2x <- rep(0.0, nrow(data))
-    if (!is.null(err.mfY)) {
-        theta.errY <- par[(n.errX + 1):(n.errX + n.errY)]
-        tau2y <- exp(2 * err.mfY %*% theta.errY)
-    } else tau2y <- tau2x
-    theta.mov <- par[(n.errX + n.errY + 1):(n.errX + n.errY + 2 * n.mov)]
-    sig2 <- exp(2 * (mov.mf %*% theta.mov[1:n.mov]))
-    b <- exp(2 * (mov.mf %*% theta.mov[(n.mov + 1):(2 * n.mov)]))
-    stay <- rep(0, nrow(data))
-    if (stopMod) {
-        stop.mf <- object.crwFit$stop.mf
-        theta.stop <- par[(n.errX + n.errY + 2 * n.mov + 1)]
-        b <- b / ((1 - stop.mf) ^ exp(theta.stop))
-        b <- ifelse(b==Inf, 9999, b) 
-        stay <- ifelse(b==9999, 1, 0)
-    }
-    if (driftMod) {
-        theta.drift <- par[(n.errX + n.errY + 2 * n.mov + 1):
-                           (n.errX + n.errY + 2 * n.mov + 2)]
-        b.drift <- b / exp(theta.drift[2])
-        sig2.drift <- exp(2 * theta.drift[1])
-        call.predict <- "crwDrift_predict"
-    } else {
-        b.drift <- sig2.drift <- 0.0
-        call.predict <- "crw_predict"
-    }
-    N <- nrow(data)
+    N <- length(loctype)
+   ###
+   ### Process parameters for Fortran
+   ###
+   if (!is.null(err.mfX)) {
+      theta.errX <- par[1:n.errX]
+      tau2x <- exp(2 * err.mfX %*% theta.errX)
+   } else tau2x <- rep(0.0, N)
+   if (!is.null(err.mfY)) {
+      theta.errY <- par[(n.errX + 1):(n.errX + n.errY)]
+      tau2y <- exp(2 * err.mfY %*% theta.errY)
+   } else tau2y <- tau2x
+   theta.mov <- par[(n.errX + n.errY + 1):(n.errX + n.errY + 2 * n.mov)]
+   sig2 <- exp(2 * (mov.mf %*% theta.mov[1:n.mov]))
+   b <- exp(mov.mf %*% theta.mov[(n.mov + 1):(2 * n.mov)])
+   stay <- rep(0, N)
+   if (stopMod) {
+      stop.mf <- stop.mf
+      theta.stop <- par[(n.errX + n.errY + 2 * n.mov + 1)]
+      b <- b / ((1 - stop.mf) ^ exp(theta.stop))
+      stay <- ifelse(b==Inf, 1, 0)
+      b <- ifelse(b==Inf, 9999, b) 
+   }
+   if (driftMod) {
+      theta.drift <- par[(n.errX + n.errY + 2 * n.mov + 1):
+                                    (n.errX + n.errY + 2 * n.mov + 2)]
+      b.drift <- exp(log(b) - log(1+exp(theta.drift[2])))
+      sig2.drift <- exp(log(sig2) + 2 * theta.drift[1])
+      call.predict <- "crwdrift_predict"
+   } else {
+      b.drift <- sig2.drift <- 0.0
+      call.predict <- "crw_predict"
+   }
+                    
+   movMats <- getQT(sig2, b, sig2.drift, b.drift, delta, driftMod)
+   
     out <- .Fortran(call.predict,
                     tau2y=as.double(tau2y),
                     tau2x=as.double(tau2x),
-                    sig2=as.double(sig2),
-                    b=as.double(b),
-                    bd=as.double(b.drift),
-                    sig2d=as.double(sig2.drift),
-                    delta=as.double(delta),
+                    Qmat=as.double(movMats$Qmat),
+                    Tmat=as.double(movMats$Tmat),
                     x=as.double(x),
                     y=as.double(y),
                     loctype=as.integer(loctype),
@@ -105,11 +106,18 @@
                     N=as.integer(N),
                     lly=as.double(0),
                     llx=as.double(0),
+                    My=as.double(rep(0,N)),
+                    uy=as.double(rep(0,N)),
+                    jky=as.double(rep(0,N)),
+                    Mx=as.double(rep(0,N)),
+                    ux=as.double(rep(0,N)),
+                    jkx=as.double(rep(0,N)),
                     predy=as.double(matrix(0, N, 2 + driftMod)),
                     predx=as.double(matrix(0, N, 2 + driftMod)),
                     vary=as.double(array(0, c(2 + driftMod, 2 + driftMod, N))),
                     varx=as.double(array(0, c(2 + driftMod, 2 + driftMod, N))),
                     package="crawl")
+                    
     predy <- data.frame(matrix(out$predy, N, 2 + driftMod))
     if (driftMod) {
         names(predy) <- c("mu.y", "theta.y", "gamma.y")
@@ -120,21 +128,36 @@
     } else names(predx) <- c("mu.x", "nu.x")
     vary <- zapsmall(array(out$vary, c(2 + driftMod, 2 + driftMod, N)))
     varx <- zapsmall(array(out$varx, c(2 + driftMod, 2 + driftMod, N)))
+    obsFit <- data.frame(shock.x=ifelse(out$Mx!=0,out$ux/out$Mx,NA), 
+                         predObs.x=ifelse(out$Mx!=0,out$jkx,NA), 
+                         Vshock.x=ifelse(out$Mx!=0,1/out$Mx,NA), 
+                         shock.y=ifelse(out$My!=0,out$uy/out$My,NA), 
+                         predObs.y=ifelse(out$My!=0,out$jky,NA), 
+                         Vshock.y=ifelse(out$My!=0,1/out$My,NA))
+    obsFit$outlier.chisq <- out$ux^2/out$Mx + out$uy^2/out$My
+    obsFit$naive.p.val <- 1 - pchisq(obsFit$outlier.chisq, 2)
     if (speedEst) {
         log.speed <- logSpeed(predx, predy, varx, vary, object.crwFit$polar.coord)
     } else log.speed <- NULL
     out <- list(originalData=fillCols(data), alpha.hat.y=predy, alpha.hat.x=predx,
                 V.hat.y=vary, V.hat.x=varx, speed=log.speed, loglik=out$lly + out$llx)
-    attr(out, "coord") <- c(x=object.crwFit$coord[1], y=object.crwFit$coord[2])
-    attr(out, "random.drift") <- driftMod
-    attr(out, "stop.model") <- object.crwFit$stopMod
-    attr(out, "polar.coord") <- object.crwFit$polar.coord
-    attr(out, "Time.name") <- tn
     if (flat) {
-        out <- fillCols(as.flat(out))
+        out <- cbind(fillCols(as.flat(out)), obsFit)
+        attr(out, "flat") <- TRUE
+        attr(out, "coord") <- c(x=object.crwFit$coord[1], y=object.crwFit$coord[2])
+    	attr(out, "random.drift") <- driftMod
+    	attr(out, "stop.model") <- object.crwFit$stopMod
+    	attr(out, "polar.coord") <- object.crwFit$polar.coord
+    	attr(out, "Time.name") <- tn
     } else {
-        class(out) <- c("crwPredict", "list")
+       out <- append(out, list(fit.test=obsFit))
         attr(out, "flat") <- FALSE
+        attr(out, "coord") <- c(x=object.crwFit$coord[1], y=object.crwFit$coord[2])
+    	attr(out, "random.drift") <- driftMod
+    	attr(out, "stop.model") <- object.crwFit$stopMod
+    	attr(out, "polar.coord") <- object.crwFit$polar.coord
+    	attr(out, "Time.name") <- tn
     }
+    class(out) <- c(class(out),"crwPredict")
     return(out)
 }

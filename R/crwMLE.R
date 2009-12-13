@@ -1,17 +1,24 @@
 "crwMLE" <- function(mov.model=~1, err.model=NULL, stop.model=NULL, drift.model=FALSE,
                      data, coord=c("x", "y"), polar.coord, Time.name,
-                     initial.state, theta, fixPar, method="L-BFGS-B", control=NULL,
+                     initial.state, theta, fixPar, method="L-BFGS-B", control=NULL, lower, upper,
                      initialSANN=NULL, attempts=1)
 {
     st <- Sys.time()
     if (missing(Time.name)) stop("Argument 'Time.name' missing. Please specify")
 
+    
     ### Transform 'sp' package SpatialPointsDataFrame
+    
     if(inherits(data, "SpatialPoints")) {
-	polar.coord <- "+proj=longlat" %in% strsplit(proj4string(data), " ")[[1]]
-	coordVals <- as.data.frame(coordinates(data))
-	coord <- names(coordVals)
-	data <- cbind(slot(data,"data"), coordVals)
+	
+    	polar.coord <- "+proj=longlat" %in% strsplit(proj4string(data), " ")[[1]]
+	
+    	coordVals <- as.data.frame(coordinates(data))
+	
+    	coord <- names(coordVals)
+	
+    	data <- cbind(slot(data,"data"), coordVals)
+    
     }
 
     ## SET UP MODEL MATRICES AND PARAMETERS ##
@@ -92,12 +99,16 @@
     } else lonAdjVals <- rep(1, nrow(data))
 
     ## DEFINING OPTIMIZATION PROCEDURE ##
-    if (method=='SANN' | !driftMod) lower <- -Inf
-    else {
-      if (is.na(fixPar[n.par])) {
-          lower <- c(rep(-Inf, length(theta)-1), 0)
-      } else lower <- -Inf 
-    }
+#     if(missing(lower)) {
+#     	if (method=='SANN' | !driftMod) lower <- -Inf
+#     	else {
+#       		if (is.na(fixPar[n.par])) {
+#           		lower <- c(rep(-Inf, length(theta)-1), 0)
+#       		} else lower <- -Inf 
+#     	}
+#     }
+	if(missing(lower)) lower <- -Inf
+    if(missing(upper)) upper <- Inf
     checkFit <- 1
     thetaAttempt <- theta
     while(attempts > 0 & checkFit == 1) {
@@ -110,9 +121,11 @@
                        err.mfX=err.mfX, err.mfY=err.mfY, stop.mf=stop.mf,
                        n.mov=n.mov, n.errX=n.errX, n.errY=n.errY, stopMod=stopMod,
                        driftMod=driftMod, control=initialSANN)
-         thetaAttempt <- init$par
+         #thetaAttempt <- init$par
       } else init <- list(par=thetaAttempt)
-      mle <- try(optim(init$par, crwN2ll, method=method, hessian=TRUE, lower=lower,
+      if(any(init$par<lower)) init$par[init$par<lower] <- lower[init$par<lower] + 0.000001
+      if(any(init$par>upper)) init$par[init$par>upper] <- upper[init$par>upper] - 0.000001
+      mle <- try(optim(init$par, crwN2ll, method=method, hessian=TRUE, lower=lower, upper=upper,
                    fixPar=fixPar, y=y.lik, x=x.lik, loctype=loctype,
                    delta=c(diff(data[, Time.name]), 1), a1.y=initial.state$a1.y,
                    a1.x=initial.state$a1.x, P1.x=initial.state$P1.x,
@@ -144,6 +157,7 @@
                    n.mov=n.mov, n.errX=n.errX, n.errY=n.errY,
                    mov.mf=mov.mf, err.mfX=err.mfX, err.mfY=err.mfY, stop.mf=stop.mf,
                    polar.coord=polar.coord, Time.name=Time.name, init=init, data=data,
+                   lower=lower, upper=upper,
                    runTime=difftime(Sys.time(), st))
        class(out) <- c("crwFit")
        return(out)

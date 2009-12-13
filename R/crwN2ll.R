@@ -3,43 +3,46 @@
                       n.errX, n.errY, n.mov, stopMod, driftMod)
 {
     N <- length(y)
-    fixPar[is.na(fixPar)] <- theta
-    if (!is.null(err.mfX)) {
-        theta.errX <- fixPar[1:n.errX]
-        tau2x <- exp(2 * err.mfX %*% theta.errX)
-    } else tau2x <- rep(0.0,N)
-    if (!is.null(err.mfY)) {
-        theta.errY <- fixPar[(n.errX + 1):(n.errX + n.errY)]
-        tau2y <- exp(2 * err.mfY %*% theta.errY)
-    } else tau2y <- tau2x
-    theta.mov <- fixPar[(n.errX + n.errY + 1):(n.errX + n.errY + 2 * n.mov)]
-    sig2 <- exp(2 * (mov.mf %*% theta.mov[1:n.mov]))
-    b <- exp(2 * (mov.mf %*% theta.mov[(n.mov + 1):(2 * n.mov)]))
-    stay <- rep(0, N)
-    if (stopMod) {
-        theta.stop <- fixPar[(n.errX + n.errY + 2 * n.mov + 1)]
-        b <- b / ((1 - stop.mf) ^ exp(theta.stop))
-        b <- ifelse(b==Inf, 9999, b) 
-        stay <- ifelse(b==9999, 1, 0)
-    }
-    if (driftMod) {
-        theta.drift <- fixPar[(n.errX + n.errY + 2 * n.mov + 1):
-                              (n.errX + n.errY + 2 * n.mov + 2)]
-        b.drift <- b / exp(theta.drift[2])
-        sig2.drift <- exp(2 * theta.drift[1])
-        call.lik <- "crwdriftn2ll"
-    } else {
-        b.drift <- sig2.drift <- 0.0
-        call.lik <- "crwn2ll"
-    }
+    par <- fixPar
+    par[is.na(fixPar)] <- theta
+   ###
+   ### Process parameters for Fortran
+   ###
+   if (!is.null(err.mfX)) {
+      theta.errX <- par[1:n.errX]
+      tau2x <- exp(2 * err.mfX %*% theta.errX)
+   } else tau2x <- rep(0.0, N)
+   if (!is.null(err.mfY)) {
+      theta.errY <- par[(n.errX + 1):(n.errX + n.errY)]
+      tau2y <- exp(2 * err.mfY %*% theta.errY)
+   } else tau2y <- tau2x
+   theta.mov <- par[(n.errX + n.errY + 1):(n.errX + n.errY + 2 * n.mov)]
+   sig2 <- exp(2 * (mov.mf %*% theta.mov[1:n.mov]))
+   b <- exp(mov.mf %*% theta.mov[(n.mov + 1):(2 * n.mov)])
+   stay <- rep(0, N)
+   if (stopMod) {
+      stop.mf <- stop.mf
+      theta.stop <- par[(n.errX + n.errY + 2 * n.mov + 1)]
+      b <- b / ((1 - stop.mf) ^ exp(theta.stop))
+      stay <- ifelse(b==Inf, 1, 0)
+      b <- ifelse(b==Inf, 9999, b) 
+   }
+   if (driftMod) {
+      theta.drift <- par[(n.errX + n.errY + 2 * n.mov + 1):
+                                    (n.errX + n.errY + 2 * n.mov + 2)]
+      b.drift <- exp(log(b) - log(1+exp(theta.drift[2])))
+      sig2.drift <- exp(log(sig2) + 2 * theta.drift[1])
+      call.lik <- "crwdriftn2ll"
+   } else {
+      b.drift <- sig2.drift <- 0.0
+      call.lik <- "crwn2ll"
+   }
+   movMats <- getQT(sig2, b, sig2.drift, b.drift, delta, driftMod)
     out <- .Fortran(call.lik,
                     tau2y=as.double(tau2y),
                     tau2x=as.double(tau2x),
-                    sig2=as.double(sig2),
-                    b=as.double(b),
-                    bd=as.double(b.drift),
-                    sig2d=as.double(sig2.drift),
-                    delta=as.double(delta),
+                    Qmat=as.double(as.matrix(movMats$Qmat)),
+                    Tmat=as.double(as.matrix(movMats$Tmat)),
                     x=as.double(x),
                     y=as.double(y),
                     loctype=as.integer(loctype),

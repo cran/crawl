@@ -87,12 +87,35 @@ fit <- crwMLE(mov.model=~1, err.model=list(x=~errX, y=~errY), drift.model=TRUE,
 
 ##Make hourly location predictions
 predTime <- seq(ceiling(min(nfsNew$Time)), floor(max(nfsNew$Time)), 1)
-predObj <- crwPredict(object.crwFit=fit, predTime=predTime, speedEst=TRUE,
-                      flat=FALSE)
-str(predObj)
-predObj <- as.flat(predObj)
+predObj <- crwPredict(object.crwFit=fit, predTime, speedEst=TRUE, flat=TRUE)
 head(predObj)
 crwPredictPlot(predObj)
+
+##Create simulation object with 100 parameter draws
+simObj <- crwSimulator(fit, predTime, parIS=100, df=20, scale=18/20)
+
+## Examine IS weight distribution
+w <- simObj$thetaSampList[[1]][,1]
+dev.new()
+hist(w*100, main='Importance Samplig Weights', sub='More weights near 1 is desirable')
+
+##Approximate number of independent samples
+100/(1+(sd(w)/mean(w))^2)
+
+dev.new(bg=gray(0.75))
+jet.colors <-
+  colorRampPalette(c("#00007F", "blue", "#007FFF", "cyan",
+                     "#7FFF7F", "yellow", "#FF7F00", "red", "#7F0000"))
+crwPredictPlot(predObj, 'map')
+
+## Sample 20 tracks from posterior predictive distribution
+iter <- 20
+cols <- jet.colors(iter)
+for(i in 1:iter){
+   samp <- crwPostIS(simObj)
+   lines(samp$alpha.sim.x[,'mu'], samp$alpha.sim.y[,'mu'],col=cols[i])
+}
+
 }
 
 

@@ -19,3 +19,10 @@
     ## library.dynam("filenameForDll", pkgname)
     library.dynam("crawl", pkgname)
 }
+
+".Last.lib" <- function(libpath)
+{
+library.dynam.unload("crawl", libpath)
+cat("\nBye-Bye from crawl\n\n")
+}
+

@@ -154,3 +154,27 @@
                   -698969170L, -1437928171L, -1156402799L, 1122493543L,
                   -607411559L, 55417736L, 1993198746L, 929142911L,
                   70336915L, -991939639L, -1545046851L, 304940986L)
+                  
+rmvtt <- function(mu, Sigma, df=Inf, lower, upper){
+	p <- length(mu)
+	out <- rep(NA,p)
+	div <- ifelse(df==Inf, 1, sqrt(rchisq(1,df=df)/df))
+	truncLo <- pnorm(div*(lower[1]-mu[1])/sqrt(Sigma[1,1]))
+	truncUp <- pnorm((div*upper[1]-mu[1])/sqrt(Sigma[1,1]))
+	out[1] <- mu[1] + sqrt(Sigma[1,1])*(qnorm(runif(1, truncLo, truncUp))/div)
+	if(p>1){	
+		for(i in 2:p){
+			S12 <- Sigma[i,1:(i-1)]
+			S22 <- Sigma[1:(i-1),1:(i-1)]
+			res <- out[1:(i-1)]-mu[1:(i-1)]
+			mu.c <- mu[i] + S12%*%solve(S22, res)
+			S.c <- Sigma[i,i] - S12%*%solve(S22,S12)
+			truncLo <- pnorm(div*(lower[i]-mu.c)/sqrt(S.c))
+			truncUp <- pnorm((div*upper[i]-mu.c)/sqrt(S.c))
+			out[i] <- mu.c + sqrt(S.c)*(qnorm(runif(1, truncLo, truncUp))/div)
+		}
+		return(out)
+	}
+	else return(out)
+}
+
