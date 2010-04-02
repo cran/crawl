@@ -1,4 +1,4 @@
-crwSamplePar <- function(object.sim, size=1000, df=Inf, scale=1)
+crwSamplePar <- function(object.sim, method="IS", size=1000, df=Inf, grid.eps=1, crit=2.5, scale=1)
 {
    if(!inherits(object.sim, 'crwSimulator'))
       stop("Argument needs to be of class 'crwSimulator'\nUse 'crwSimulator( )' to create")
@@ -8,82 +8,113 @@ crwSamplePar <- function(object.sim, size=1000, df=Inf, scale=1)
    err.mfX <- object.sim$err.mfX
    err.mfY <- object.sim$err.mfY
    parMLE <- object.sim$par
+   n2ll.mode <- -2*object.sim$loglik
    stopMod <- object.sim$stopMod
    driftMod <- object.sim$driftMod
    stop.mf <- object.sim$stop.mf
    mov.mf <- object.sim$mov.mf
+   y <- object.sim$y
+   x <- object.sim$x
+   loctype <- object.sim$loctype
+   delta <- object.sim$delta
+   a1.y <- object.sim$a1.y
+   a1.x <- object.sim$a1.x
+   P1.x <- object.sim$P1.x
+   P1.y <- object.sim$P1.y
+   lonAdj <- object.sim$lonAd
    n.errX <- object.sim$n.errX
    n.errY <- object.sim$n.errY
    n.mov <- object.sim$n.mov
    N <- object.sim$N
    lower <- object.sim$lower
    upper <- object.sim$upper 
-   delta <- object.sim$delta
-   thetaMat <- matrix(NA, size, length(fixPar)+3)
-   for(i in 1:(size-1)){
-   	 par <- parMLE
-     eInd <- is.na(fixPar)
-   	 eps <- rmvtt(mu=rep(0,sum(eInd)), Sigma=scale*Cmat, df=df, lower-par[eInd], upper-par[eInd])
-     par[eInd] <- parMLE[eInd] + eps
-     if(df==Inf) dens <- dmvnorm(eps, sigma=scale*Cmat, log=TRUE) - dmvnorm(0.0*eps, sigma=scale*Cmat, log=TRUE)
-     else dens <- dmvt(eps, sigma=scale*Cmat, df=df, log=TRUE) - dmvt(0.0*eps, sigma=scale*Cmat, df=df, log=TRUE)
-   ###
-   ### Process parameters for Fortran
-   ###
-   if (!is.null(err.mfX)) {
-      theta.errX <- par[1:n.errX]
-      tau2x <- exp(2 * err.mfX %*% theta.errX)
-   } else tau2x <- rep(0.0, N)
-   if (!is.null(err.mfY)) {
-      theta.errY <- par[(n.errX + 1):(n.errX + n.errY)]
-      tau2y <- exp(2 * err.mfY %*% theta.errY)
-   } else tau2y <- tau2x
-   theta.mov <- par[(n.errX + n.errY + 1):(n.errX + n.errY + 2 * n.mov)]
-   sig2 <- exp(2 * (mov.mf %*% theta.mov[1:n.mov]))
-   b <- exp(mov.mf %*% theta.mov[(n.mov + 1):(2 * n.mov)])
-   stay <- rep(0, N)
-   if (stopMod) {
-      stop.mf <- stop.mf
-      theta.stop <- par[(n.errX + n.errY + 2 * n.mov + 1)]
-      b <- b / ((1 - stop.mf) ^ exp(theta.stop))
-      stay <- ifelse(b==Inf, 1, 0)
-      b <- ifelse(b==Inf, 9999, b) 
-   }
-   if (driftMod) {
-      theta.drift <- par[(n.errX + n.errY + 2 * n.mov + 1):
-                                    (n.errX + n.errY + 2 * n.mov + 2)]
-      b.drift <- exp(log(b) - log(1+exp(theta.drift[2])))
-      sig2.drift <- exp(log(sig2) + 2 * theta.drift[1])
-      call.lik <- "crwdriftn2ll"
-   } else {
-      b.drift <- sig2.drift <- 0.0
-      call.lik <- "crwn2ll"
-   }
-   movMats <- getQT(sig2, b, sig2.drift, b.drift, delta, driftMod)
-     out <- .Fortran(call.lik,
-                    tau2y=as.double(tau2y),
-                    tau2x=as.double(tau2x),
-                    Qmat=as.double(movMats$Qmat),
-                    Tmat=as.double(movMats$Tmat),
-                    x=as.double(object.sim$x),
-                    y=as.double(object.sim$y),
-                    loctype=as.integer(object.sim$loctype),
-                    stay=as.integer(stay),
-                    ay=as.double(object.sim$a1.y),
-                    ax=as.double(object.sim$a1.x),
-                    Py=as.double(object.sim$P1.y),
-                    Px=as.double(object.sim$P1.x),
-                    lonadj=as.double(object.sim$lonAdj),
-                    N=as.integer(N),
-                    lly=as.double(0),
-                    llx=as.double(0),
-                    package="crawl")
-     thetaMat[i,] <- c(out$lly+out$llx - dens, out$lly+out$llx, dens, par)
-  }
-thetaMat[size,] <- c(object.sim$loglik, object.sim$loglik, 0, object.sim$par)
+   cat("\nComputing importance weights ...\n")
+   if(method=="IS"){
+       thetaMat <- matrix(NA, size, length(fixPar)+3)
+	   for(i in 1:(size-1)){
+   	 	par <- parMLE
+     	eInd <- is.na(fixPar)
+   	 	eps <- rmvtt(mu=rep(0,sum(eInd)), Sigma=scale*Cmat, df=df, lower-par[eInd], upper-par[eInd])
+     	par[eInd] <- parMLE[eInd] + eps
+     	if(df==Inf) dens <- dmvnorm(eps, sigma=scale*Cmat, log=TRUE) - dmvnorm(0.0*eps, sigma=scale*Cmat, log=TRUE)
+     	else dens <- dmvt(eps, sigma=scale*Cmat, df=df, log=TRUE) - dmvt(0.0*eps, sigma=scale*Cmat, df=df, log=TRUE)
+		n2ll.val <- crwN2ll(par[eInd], fixPar, y, x, loctype, delta, a1.y, a1.x,
+                      					P1.x, P1.y, lonAdj, mov.mf, err.mfX, err.mfY, stop.mf,
+                      					n.errX, n.errY, n.mov, stopMod, driftMod)
+		thetaMat[i,] <- c(-n2ll.val/2 - dens, -n2ll.val/2, dens, par)
+	  }
+	  thetaMat[size,] <- c(object.sim$loglik, object.sim$loglik, 0, object.sim$par)
+	  thetaMat[,1] <- exp(thetaMat[,1]-max(thetaMat[,1]))/sum(exp(thetaMat[,1]-max(thetaMat[,1])))
+	}
+else if(method=="quadrature"){
+	Eigen.list <- eigen(Cmat, symmetric=TRUE)
+	V <- Eigen.list$vectors
+	D <- diag(sqrt(Eigen.list$values))
+	np <- sum(is.na(fixPar))
+	grid.list <- rep(list(0), np)
+	eInd <- is.na(fixPar)
+	thetaMat <- matrix(c(-n2ll.mode/2, -n2ll.mode/2, 0, parMLE), nrow=1)
+	   for(k in 1:np){
+	   		stop.grid <- TRUE
+	   		z <- rep(0,np)
+	   		while(stop.grid){
+	   			z[k] <- z[k] + grid.eps 
+		 		par <- parMLE
+		 		par[eInd] <- parMLE[eInd] + V%*%D%*%z
+		 		if(any(par[eInd]>upper) | any(par[eInd]<lower)) stop.grid <- FALSE
+		 		else{
+		 		 	n2ll.val <- crwN2ll(par[eInd], fixPar, y, x, loctype, delta, a1.y, a1.x,
+                      					P1.x, P1.y, lonAdj, mov.mf, err.mfX, err.mfY, stop.mf,
+                      					n.errX, n.errY, n.mov, stopMod, driftMod)
+		 		 	if(-(n2ll.mode - n2ll.val)/2 > crit) stop.grid <- FALSE
+		 		 	else{
+		 		 		grid.list[[k]] <- c(grid.list[[k]],z[k])
+		 		 		thetaMat <- rbind(thetaMat, c(-n2ll.val/2, -n2ll.val/2, 0, par))
+		 		 	}
+		 		 }
+		 	}
+	   		stop.grid <- TRUE
+	   		z <- rep(0,np)
+	   		while(stop.grid){
+	   			z[k] <- z[k] - grid.eps 
+		 		par <- parMLE
+		 		par[eInd] <- parMLE[eInd] + V%*%D%*%z
+		 		if(any(par[eInd]>upper) | any(par[eInd]<lower)) stop.grid <- FALSE
+		 		else{
+		 		 	n2ll.val <- crwN2ll(par[eInd], fixPar, y, x, loctype, delta, a1.y, a1.x,
+                      					P1.x, P1.y, lonAdj, mov.mf, err.mfX, err.mfY, stop.mf,
+                      					n.errX, n.errY, n.mov, stopMod, driftMod)
+		 		 	if(-(n2ll.mode - n2ll.val)/2 > crit) stop.grid <- FALSE
+		 		 	else{
+		 		 		grid.list[[k]] <- c(grid.list[[k]],z[k])
+		 		 		thetaMat <- rbind(thetaMat, c(-n2ll.val/2, -n2ll.val/2, 0, par))
+		 		 	}
+		 		 }
+		 	}
+	  }
+	  grid.pts <- as.matrix(expand.grid(grid.list))
+	  grid.pts <- grid.pts[apply(grid.pts==0, 1, sum) < np-1, ]
+	  cat("\nEvaluating ", nrow(grid.pts), " quadrature points ...\n")
+	  for(i in 1:nrow(grid.pts)){
+	  		   	z <- grid.pts[i,]
+		 		par <- parMLE
+		 		par[eInd] <- parMLE[eInd] + V%*%D%*%z
+		 		if(any(par[eInd]>upper) | any(par[eInd]<lower)) next
+		 		else{
+		 		 	n2ll.val <- crwN2ll(par[eInd], fixPar, y, x, loctype, delta, a1.y, a1.x,
+                      					P1.x, P1.y, lonAdj, mov.mf, err.mfX, err.mfY, stop.mf,
+                      					n.errX, n.errY, n.mov, stopMod, driftMod)
+		 		 	if(-(n2ll.mode - n2ll.val)/2 > crit) next
+		 		 	else thetaMat <- rbind(thetaMat, c(-n2ll.val/2, -n2ll.val/2, 0, par))
+		 		 }
+		}	
 thetaMat[,1] <- exp(thetaMat[,1]-max(thetaMat[,1]))/sum(exp(thetaMat[,1]-max(thetaMat[,1])))
+}
+else stop("\nIncorrect specification of parameter sampling method\n")
+
 colnames(thetaMat) <- c("w", "lik", "prop.lik", object.sim$nms)
-attr(thetaMat,"effSamp") <- size/(1+(sd(thetaMat[,"w"])/mean(thetaMat[,"w"]))^2) 
+attr(thetaMat,"effSamp") <- nrow(thetaMat)/(1+(sd(thetaMat[,"w"])/mean(thetaMat[,"w"]))^2) 
+attr(thetaMat, "method") <- method
 if(is.null(object.sim$thetaSampList)) object.sim$thetaSampList <- list(thetaMat)
 else object.sim$thetaSampList <- append(object.sim$thetaSampList, list(thetaMat))
 return(object.sim)	
