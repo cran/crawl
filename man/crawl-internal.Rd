@@ -6,6 +6,9 @@
 \alias{ps2}
 \alias{ps3}
 \alias{ps4}
+\alias{ps1a}
+\alias{ps2a}
+\alias{ps3a}
 \alias{getQT}
 
 

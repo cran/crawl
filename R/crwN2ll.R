@@ -1,7 +1,8 @@
 "crwN2ll" <- function(theta, fixPar, y, x, loctype, delta, a1.y, a1.x,
                       P1.x, P1.y, lonAdj, mov.mf, err.mfX, err.mfY, stop.mf,
-                      n.errX, n.errY, n.mov, stopMod, driftMod)
+                      n.errX, n.errY, n.mov, stopMod, driftMod, prior, need.hess, constr=list(lower=-Inf, upper=Inf))
 {
+	if(!need.hess & any(theta<=constr$lower | theta>=constr$upper)) return(-Inf)
     N <- length(y)
     par <- fixPar
     par[is.na(fixPar)] <- theta
@@ -31,7 +32,7 @@
       theta.drift <- par[(n.errX + n.errY + 2 * n.mov + 1):
                                     (n.errX + n.errY + 2 * n.mov + 2)]
       b.drift <- exp(log(b) - log(1+exp(theta.drift[2])))
-      sig2.drift <- exp(log(sig2) + 2 * theta.drift[1])
+      sig2.drift <- exp(log(sig2) + 2 * theta.drift[1]) #rep(exp(2*theta.drift[1]), length(sig2)) #
       call.lik <- "crwdriftn2ll"
    } else {
       b.drift <- sig2.drift <- 0.0
@@ -56,5 +57,6 @@
                     lly=as.double(0),
                     llx=as.double(0),
                     package="crawl")
-    return(-2 * (out$lly + out$llx))
+    if(is.null(prior)) return(-2 * (out$lly + out$llx))
+	else return(-2 * (out$lly + out$llx + prior(theta)))
 }

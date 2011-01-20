@@ -1,26 +1,26 @@
 "crwMLE" <- function(mov.model=~1, err.model=NULL, stop.model=NULL, drift.model=FALSE,
                      data, coord=c("x", "y"), polar.coord, Time.name,
-                     initial.state, theta, fixPar, method="L-BFGS-B", control=NULL, lower, upper,
-                     initialSANN=NULL, attempts=1)
+                     initial.state, theta, fixPar, method="L-BFGS-B", control=NULL, constr=list(lower=-Inf, upper=Inf), 
+					 prior=NULL, need.hess=TRUE, initialSANN=NULL, attempts=1)
 {
     st <- Sys.time()
     if (missing(Time.name)) stop("Argument 'Time.name' missing. Please specify")
 
     
     ### Transform 'sp' package SpatialPointsDataFrame
-    
-    if(inherits(data, "SpatialPoints")) {
-	
-    	polar.coord <- "+proj=longlat" %in% strsplit(proj4string(data), " ")[[1]]
-	
-    	coordVals <- as.data.frame(coordinates(data))
-	
-    	coord <- names(coordVals)
-	
-    	data <- cbind(slot(data,"data"), coordVals)
-    
+    if(inherits(data, "trip")){
+		Time.name <- data@TOR.columns[1]
+	}
+    if(inherits(data, "SpatialPoints")) {	
+    	polar.coord <- "+proj=longlat" %in% strsplit(proj4string(data), " ")[[1]]	
+    	coordVals <- as.data.frame(coordinates(data))	
+    	coord <- names(coordVals)	
+    	data <- cbind(slot(data,"data"), coordVals)    
     }
-
+	if(inherits(data[,Time.name],"POSIXct")){
+		data$TimeNum <- as.numeric(data[,Time.name])
+		Time.name <- "TimeNum"
+	}
     ## SET UP MODEL MATRICES AND PARAMETERS ##
     errMod <- !is.null(err.model)
     stopMod <- !is.null(stop.model)
@@ -53,7 +53,7 @@
         err.mfX <- err.mfY <- NULL
     }
     if (stopMod) {
-        stop.model
+        #stop.model
         stop.mf <- model.matrix(stop.model,
                                 model.frame(stop.model, data, na.action=na.pass))
         if (ncol(stop.mf) > 2) stop("\nThere can only be one stopping variable >0 and <1\n")
@@ -74,7 +74,7 @@
     } else tau.nms <- NULL
     if (stopMod) {stop.nms <- "ln phi"} else stop.nms <- NULL
     if (driftMod) {
-        drift.nms <- c("ln sigma.drift", "ln psi")
+        drift.nms <- c("ln sigma.drift/sigma", "ln psi-1")
     } else drift.nms <- NULL
     nms <- c(tau.nms, sig.nms, b.nms, stop.nms, drift.nms)
     n.par <- length(nms)
@@ -107,32 +107,32 @@
 #       		} else lower <- -Inf 
 #     	}
 #     }
-	if(missing(lower)) lower <- -Inf
-    if(missing(upper)) upper <- Inf
+
     checkFit <- 1
     thetaAttempt <- theta
     while(attempts > 0 & checkFit == 1) {
       if (!is.null(initialSANN) & method!='SANN') {
-         init <- optim(thetaAttempt, crwN2ll, method='SANN',
+         init <- optim(thetaAttempt, crwN2ll, method='SANN', control=initialSANN,
                        fixPar=fixPar, y=y.lik, x=x.lik, loctype=loctype,
                        delta=c(diff(data[, Time.name]), 1), a1.y=initial.state$a1.y,
                        a1.x=initial.state$a1.x, P1.x=initial.state$P1.x,
                        P1.y=initial.state$P1.y, lonAdj=lonAdjVals, mov.mf=mov.mf,
                        err.mfX=err.mfX, err.mfY=err.mfY, stop.mf=stop.mf,
                        n.mov=n.mov, n.errX=n.errX, n.errY=n.errY, stopMod=stopMod,
-                       driftMod=driftMod, control=initialSANN)
+                       driftMod=driftMod, prior=prior, need.hess=FALSE, constr=constr)
          #thetaAttempt <- init$par
       } else init <- list(par=thetaAttempt)
-      if(any(init$par<lower)) init$par[init$par<lower] <- lower[init$par<lower] + 0.000001
-      if(any(init$par>upper)) init$par[init$par>upper] <- upper[init$par>upper] - 0.000001
-      mle <- try(optim(init$par, crwN2ll, method=method, hessian=TRUE, lower=lower, upper=upper,
+      #if(any(init$par<lower)) init$par[init$par<lower] <- lower[init$par<lower] + 0.000001
+      #if(any(init$par>upper)) init$par[init$par>upper] <- upper[init$par>upper] - 0.000001
+      mle <- try(optim(init$par, crwN2ll, method=method, hessian=need.hess,
+				   lower=constr$lower, upper=constr$upper, control=control,					  
                    fixPar=fixPar, y=y.lik, x=x.lik, loctype=loctype,
                    delta=c(diff(data[, Time.name]), 1), a1.y=initial.state$a1.y,
                    a1.x=initial.state$a1.x, P1.x=initial.state$P1.x,
                    P1.y=initial.state$P1.y, lonAdj=lonAdjVals, mov.mf=mov.mf,
                    err.mfX=err.mfX, err.mfY=err.mfY, stop.mf=stop.mf,
                    n.mov=n.mov, n.errX=n.errX, n.errY=n.errY, stopMod=stopMod,
-                   driftMod=driftMod, control=control), silent=TRUE)
+                   driftMod=driftMod, prior=prior, need.hess=need.hess, constr=constr), silent=TRUE)
       attempts <- attempts - 1
       checkFit <- 1.0*(inherits(mle, 'try-error'))
     }
@@ -157,7 +157,7 @@
                    n.mov=n.mov, n.errX=n.errX, n.errY=n.errY,
                    mov.mf=mov.mf, err.mfX=err.mfX, err.mfY=err.mfY, stop.mf=stop.mf,
                    polar.coord=polar.coord, Time.name=Time.name, init=init, data=data,
-                   lower=lower, upper=upper,
+                   lower=constr$lower, upper=constr$upper, prior=prior, need.hess=need.hess,
                    runTime=difftime(Sys.time(), st))
        class(out) <- c("crwFit")
        return(out)

@@ -29,7 +29,7 @@ crwPredict(object.crwFit, predTime=NULL, speedEst=FALSE, flat=TRUE)
 \arguments{
   \item{object.crwFit}{A model object from \code{\link{crwMLE}}.}
 
-  \item{predTime}{vector of additional prediction times.}
+  \item{predTime}{vector of additional prediction times (numeric or POSIXct).}
 
   \item{speedEst}{logical. Estimate animal speed or not.}
 

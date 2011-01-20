@@ -28,6 +28,7 @@ crwSamplePar <- function(object.sim, method="IS", size=1000, df=Inf, grid.eps=1,
    N <- object.sim$N
    lower <- object.sim$lower
    upper <- object.sim$upper 
+   prior <- object.sim$prior
    cat("\nComputing importance weights ...\n")
    if(method=="IS"){
        thetaMat <- matrix(NA, size, length(fixPar)+3)
@@ -40,12 +41,15 @@ crwSamplePar <- function(object.sim, method="IS", size=1000, df=Inf, grid.eps=1,
      	else dens <- dmvt(eps, sigma=scale*Cmat, df=df, log=TRUE) - dmvt(0.0*eps, sigma=scale*Cmat, df=df, log=TRUE)
 		n2ll.val <- crwN2ll(par[eInd], fixPar, y, x, loctype, delta, a1.y, a1.x,
                       					P1.x, P1.y, lonAdj, mov.mf, err.mfX, err.mfY, stop.mf,
-                      					n.errX, n.errY, n.mov, stopMod, driftMod)
+                      					n.errX, n.errY, n.mov, stopMod, driftMod, prior=prior, need.hess=FALSE)
 		thetaMat[i,] <- c(-n2ll.val/2 - dens, -n2ll.val/2, dens, par)
 	  }
 	  thetaMat[size,] <- c(object.sim$loglik, object.sim$loglik, 0, object.sim$par)
 	  thetaMat[,1] <- exp(thetaMat[,1]-max(thetaMat[,1]))/sum(exp(thetaMat[,1]-max(thetaMat[,1])))
 	}
+else if(method=="mcmc"){
+
+}
 else if(method=="quadrature"){
 	Eigen.list <- eigen(Cmat, symmetric=TRUE)
 	V <- Eigen.list$vectors
@@ -65,7 +69,7 @@ else if(method=="quadrature"){
 		 		else{
 		 		 	n2ll.val <- crwN2ll(par[eInd], fixPar, y, x, loctype, delta, a1.y, a1.x,
                       					P1.x, P1.y, lonAdj, mov.mf, err.mfX, err.mfY, stop.mf,
-                      					n.errX, n.errY, n.mov, stopMod, driftMod)
+                      					n.errX, n.errY, n.mov, stopMod, driftMod, prior=prior, need.hess=FALSE)
 		 		 	if(-(n2ll.mode - n2ll.val)/2 > crit) stop.grid <- FALSE
 		 		 	else{
 		 		 		grid.list[[k]] <- c(grid.list[[k]],z[k])
@@ -83,7 +87,7 @@ else if(method=="quadrature"){
 		 		else{
 		 		 	n2ll.val <- crwN2ll(par[eInd], fixPar, y, x, loctype, delta, a1.y, a1.x,
                       					P1.x, P1.y, lonAdj, mov.mf, err.mfX, err.mfY, stop.mf,
-                      					n.errX, n.errY, n.mov, stopMod, driftMod)
+                      					n.errX, n.errY, n.mov, stopMod, driftMod, prior=prior, need.hess=FALSE)
 		 		 	if(-(n2ll.mode - n2ll.val)/2 > crit) stop.grid <- FALSE
 		 		 	else{
 		 		 		grid.list[[k]] <- c(grid.list[[k]],z[k])
@@ -94,8 +98,24 @@ else if(method=="quadrature"){
 	  }
 	  grid.pts <- as.matrix(expand.grid(grid.list))
 	  grid.pts <- grid.pts[apply(grid.pts==0, 1, sum) < np-1, ]
-	  cat("\nEvaluating ", nrow(grid.pts), " quadrature points ...\n")
-	  for(i in 1:nrow(grid.pts)){
+	  numEvals <- nrow(grid.pts)+nrow(thetaMat)
+	  cat("\nEvaluating ", nrow(grid.pts)+nrow(thetaMat), " quadrature points ...\n")
+	  parFix <- ifelse(!eInd, parMLE, 0)
+#	  grid.eval <- system.time(t(apply(grid.pts, 1, 
+#			  			function(z,...){
+#							par[eInd] <- parMLE[eInd] + V%*%D%*%z
+#							if(any(par[eInd]>upper) | any(par[eInd]<lower)) return(rep(NA,length(par)+3))
+#							else{
+#								n2ll.val <- crwN2ll(par[eInd], fixPar, y, x, loctype, delta, a1.y, a1.x,
+#										P1.x, P1.y, lonAdj, mov.mf, err.mfX, err.mfY, stop.mf,
+#										n.errX, n.errY, n.mov, stopMod, driftMod)
+#								if(-(n2ll.mode - n2ll.val)/2 > crit) return(rep(NA,length(par)+3))
+#								else c(-n2ll.val/2, -n2ll.val/2, 0, par)
+#							}
+#						},fixPar, y, x, loctype, delta, a1.y, a1.x,
+#						P1.x, P1.y, lonAdj, mov.mf, err.mfX, err.mfY, stop.mf,
+#						n.errX, n.errY, n.mov, stopMod, driftMod)))
+	 for(i in 1:nrow(grid.pts)){
 	  		   	z <- grid.pts[i,]
 		 		par <- parMLE
 		 		par[eInd] <- parMLE[eInd] + V%*%D%*%z
@@ -103,11 +123,11 @@ else if(method=="quadrature"){
 		 		else{
 		 		 	n2ll.val <- crwN2ll(par[eInd], fixPar, y, x, loctype, delta, a1.y, a1.x,
                       					P1.x, P1.y, lonAdj, mov.mf, err.mfX, err.mfY, stop.mf,
-                      					n.errX, n.errY, n.mov, stopMod, driftMod)
+                      					n.errX, n.errY, n.mov, stopMod, driftMod, prior=prior, need.hess=FALSE)
 		 		 	if(-(n2ll.mode - n2ll.val)/2 > crit) next
 		 		 	else thetaMat <- rbind(thetaMat, c(-n2ll.val/2, -n2ll.val/2, 0, par))
 		 		 }
-		}	
+			 }
 thetaMat[,1] <- exp(thetaMat[,1]-max(thetaMat[,1]))/sum(exp(thetaMat[,1]-max(thetaMat[,1])))
 }
 else stop("\nIncorrect specification of parameter sampling method\n")
@@ -115,6 +135,7 @@ else stop("\nIncorrect specification of parameter sampling method\n")
 colnames(thetaMat) <- c("w", "lik", "prop.lik", object.sim$nms)
 attr(thetaMat,"effSamp") <- nrow(thetaMat)/(1+(sd(thetaMat[,"w"])/mean(thetaMat[,"w"]))^2) 
 attr(thetaMat, "method") <- method
+attr(thetaMat, "numLikEval") <- ifelse(method=="quadrature", numEvals, size)
 if(is.null(object.sim$thetaSampList)) object.sim$thetaSampList <- list(thetaMat)
 else object.sim$thetaSampList <- append(object.sim$thetaSampList, list(thetaMat))
 return(object.sim)	

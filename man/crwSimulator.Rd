@@ -112,12 +112,12 @@ crwSimulator(object.crwFit, predTime=NULL, method="IS", parIS=1000, df=Inf, grid
   The crwSimulator function produces a list and preprocesses the necessary
   components for repeated track simulation from a fitted CTCRW model from
   \code{\link{crwMLE}}. The \code{method} argument can be one 
-  of \code{"IS"} or \code{"quadrature"}. If method=IS is chosen standard importance sampling will 
+  of \code{"IS"} or \code{"quadrature"}. If method="IS" is chosen standard importance sampling will 
   be used to calculate the appropriate weights via t proposal with df degrees of freedom. 
   If df=Inf (default) then a multivariate normal distribution
   is used to approximate the parameter posterior. If \code{method="quadrature"}, then a regular grid
   over the posterior is used to calculate the weights. The argument \code{grid.eps} controls the quadrature 
-  grid. The arguments are approximately the upper and lower limit interms of standard deviations of the posterior. 
+  grid. The arguments are approximately the upper and lower limit in terms of standard deviations of the posterior. 
   The default is \code{grid.eps}, in units of 1sd. If \code{object.crwFit} was fitted with 
   \code{crwArgoFilter}, then the returned list will also include \code{p.out}, which is the 
   approximate probability that the observation is an outlier. 
