@@ -18,10 +18,9 @@
 
 
 \usage{
-crwMLE(mov.model=~1, err.model=NULL, stop.model=NULL, drift.model=FALSE,
-                     data, coord=c("x", "y"), polar.coord, Time.name,
-                     initial.state, theta, fixPar, method="L-BFGS-B", control=NULL, lower, upper,
-                     initialSANN=NULL, attempts=1)
+crwMLE(mov.model=~1, err.model=NULL, stop.model=NULL, drift.model=FALSE,data, coord=c("x", "y"), polar.coord, Time.name,
+initial.state, theta, fixPar, method="L-BFGS-B", control=NULL, constr=list(lower=-Inf, upper=Inf), 
+prior=NULL, need.hess=TRUE, initialSANN=NULL, attempts=1)
 }
 
 
@@ -61,9 +60,11 @@ crwMLE(mov.model=~1, err.model=NULL, stop.model=NULL, drift.model=FALSE,
 
   \item{control}{Control list which is passed to \code{\link{optim}}.}
   
-  \item{lower}{Lower bounds on parameter space}
+  \item{constr}{Named list with elements \code{lower} and \code{upper} that are vectors the same length as theta giving the box constraints for the parameters}
   
-  \item{upper}{Upper bounds on parameter space}
+  \item{prior}{A function returning the log-density function of the parameter prior specification}
+  
+  \item{need.hess}{A logical value which decides whether or not to evaluate the Hessian for parameter standard errors}
   
   \item{initialSANN}{Control list for \code{\link{optim}} when simulated 
                      annealing is used for obtaining start values. See details}
@@ -124,12 +125,18 @@ crwMLE(mov.model=~1, err.model=NULL, stop.model=NULL, drift.model=FALSE,
   \item{stop.mf}{covariate for stop indication in stopping models}
 
   \item{polar.coord}{Logical indicating coordinates are polar latitude and longitude}
-
-  \item{runTime}{Time used to fit model}
   
   \item{init}{Initial values for parameter optimization}
   
   \item{data}{Original data.frame used to fit the model}
+  
+  \item{lower}{The lower parameter bounds}
+  
+  \item{upper}{The upper parameter bounds}
+  
+  \item{need.hess}{Logical value}
+  
+  \item{runTime}{Time used to fit model}
 
 }
 
@@ -176,7 +183,7 @@ crwMLE(mov.model=~1, err.model=NULL, stop.model=NULL, drift.model=FALSE,
   to be estimated, while \code{fixPar} contains all parameter values
   with \code{NA} for parameters which are to be estimated.
 
-  The data set specified by \code{data} must contain a numeric column
+  The data set specified by \code{data} must contain a numeric or POSIXct column
   which is used as the time index for analysis. The column name is
   specified by the \code{Time.name} argument. Also, for stopping models,
   the stopping covariate must be between 0 and 1 inclusive, with 1
@@ -220,28 +227,33 @@ initial.dry <- list(
 )
 
 ##Fit model as given in Johnson et al. (2008) Ecology 89:1208-1215
+## Start values for theta come from the estimates in Johnson et al. (2008)
 
 fit1 <- crwMLE(
   mov.model=~1, err.model=list(x=~errX, y=~errY), stop.model=~DryTime,
-  data=hsNew, coord=c("longitude","latitude"), Time.name="Time", polar.coord=TRUE,
-  initial.state=initial.dry, fixPar=c(NA, 1, NA, 1, NA, NA, NA),
-  control=list(maxit=2000, trace=1, REPORT=1)
+  data=hsNew, coord=c("longitude","latitude"), polar.coord=TRUE, Time.name="Time", 
+  initial.state=initial.dry, fixPar=c(NA, 1, NA, 1, NA, NA, NA), theta=c(-6,-7,-4,-0.5,-1),
+  control=list(maxit=2000, trace=1, REPORT=1),
 )
 
 fit1
 str(fit1)
 
-##Use simulated annealing to obtain start value
+##Use simulated annealing to obtain start values and place constraints on the parameters
+
 fit2 <- crwMLE(
   mov.model=~1, err.model=list(x=~errX, y=~errY), stop.model=~DryTime,
   data=hsNew, coord=c("longitude","latitude"), Time.name="Time", polar.coord=TRUE,
   initial.state=initial.dry, fixPar=c(NA, 1, NA, 1, NA, NA, NA),
   control=list(maxit=2000, trace=1, REPORT=1),
+  constr=list(lower=c(-6, -6, -Inf, -Inf, -Inf), upper=Inf),
   initialSANN=list(maxit=100, temp=5, tmax=5, trace=1, REPORT=2)
 )
 
+fit2
+
 ##See simulated annealing start values
-fit2$init
+fit2$init$par
 
 
 

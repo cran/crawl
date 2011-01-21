@@ -14,6 +14,9 @@ function(object.crwFit, predTime=NULL, method="IS", parIS=1000, df=Inf, grid.eps
    n.errY <- object.crwFit$n.errY
    n.mov <- object.crwFit$n.mov
    tn <- object.crwFit$Time.name
+   if(inherits(predTime, "POSIXct")){
+	   predTime <- as.numeric(predTime)/3600
+   }
    ## Data setup ##
    if (!is.null(predTime)) {
       origTime <- data[, tn]
@@ -54,9 +57,9 @@ function(object.crwFit, predTime=NULL, method="IS", parIS=1000, df=Inf, grid.eps
                 par=object.crwFit$par, nms=object.crwFit$nms, N=nrow(data), lower=object.crwFit$lower, 
                 upper=object.crwFit$upper, #lambda=lambdaOut,
                 loglik=object.crwFit$loglik, data[,tn], 
-                coord=object.crwFit$coord, Time.name=object.crwFit$Time.name)
+                coord=object.crwFit$coord, Time.name=object.crwFit$Time.name, prior=object.crwFit$prior)
     names(out)[28] <- object.crwFit$Time.name
    class(out) <- 'crwSimulator'
-   if(parIS>1) out <- crwSamplePar(out, method=method, size=parIS, df=df, grid.eps=grid.eps, crit=crit, scale=scale)
+   if(parIS>1 & object.crwFit$need.hess==TRUE) out <- crwSamplePar(out, method=method, size=parIS, df=df, grid.eps=grid.eps, crit=crit, scale=scale)
    return(out)
 }

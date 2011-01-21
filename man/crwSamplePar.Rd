@@ -108,11 +108,9 @@ crwSamplePar(object.sim, method="IS", size=1000, df=Inf, grid.eps=1, crit=2.5, s
 
 \details{
 
-  The crwSimulator function produces a list and preprocesses the necessary
-  components for repeated track simulation from a fitted CTCRW model from
-  \code{\link{crwMLE}}. If method="quadrature", then a grid is used based on \code{grid.eps}. 
-  If df=Inf (default) then a multivariate normal distribution
-  is used to approximate the parameter posterior.  
+  The crwSamplePar function uses the information in a \code{\link{crwSimulator}} object to create a set of weights for 
+  importance sample-resampling of parameters in a full posterior sample of parameters and locations using \code{\link{crwPostIS}}. This function 
+  is usually called from \code{\link{crwPostIS}}. The average user should have no need to call this function directly.
 
 }
 

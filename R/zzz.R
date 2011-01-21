@@ -24,5 +24,6 @@
 {
 library.dynam.unload("crawl", libpath)
 cat("\nBye-Bye from crawl\n\n")
+return(invisible())
 }
 

@@ -15,9 +15,8 @@
 
 
 \usage{
-crwN2ll(theta, fixPar, y, x, loctype, delta, a1.y, a1.x, P1.x, P1.y,
-        lonAdj, mov.mf, err.mfX, err.mfY, stop.mf, n.errX, n.errY,
-        n.mov, stopMod, driftMod)
+crwN2ll(theta, fixPar, y, x, loctype, delta, a1.y, a1.x, P1.x, P1.y, lonAdj, mov.mf, err.mfX, err.mfY, stop.mf,
+n.errX, n.errY, n.mov, stopMod, driftMod, prior, need.hess, constr=list(lower=-Inf, upper=Inf))
 }
 
 
@@ -64,6 +63,12 @@ crwN2ll(theta, fixPar, y, x, loctype, delta, a1.y, a1.x, P1.x, P1.y,
   \item{stopMod}{Logical. indicates wheteher a stop model is specified.}
 
   \item{driftMod}{Logical. inicates whether a drift model is specified.}
+  
+  \item{prior}{Function of theta that returns the log-density of the prior}
+  
+  \item{need.hess}{Whether or not the Hessian will need to be calculated from this call}
+  
+  \item{constr}{Named list giving the parameter constraints}
     
 
 }
