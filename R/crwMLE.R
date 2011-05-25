@@ -18,9 +18,15 @@
     	data <- cbind(slot(data,"data"), coordVals)    
     }
 	if(inherits(data[,Time.name],"POSIXct")){
-		data$TimeNum <- as.numeric(data[,Time.name])
+		data$TimeNum <- as.numeric(data[,Time.name])/3600
 		Time.name <- "TimeNum"
 	}
+	
+	
+	### Check for duplicate time records ###
+	if(any(diff(data[,Time.name])==0)) stop("\nERROR: There are duplicate time records for some data entries! Please remove before proceeding.\n")
+	
+	
     ## SET UP MODEL MATRICES AND PARAMETERS ##
     errMod <- !is.null(err.model)
     stopMod <- !is.null(stop.model)
@@ -79,12 +85,16 @@
     nms <- c(tau.nms, sig.nms, b.nms, stop.nms, drift.nms)
     n.par <- length(nms)
     if (missing(fixPar)) fixPar <- rep(NA, n.par)
-    if (length(fixPar)!=n.par) stop(paste("'fixPar' argument is not the right length\nThe number of free parameters in the model is", n.par))
-    if (missing(theta)) theta <- rep(0.000001, sum(is.na(fixPar)))
-    theta <- ifelse(is.na(theta), 0.00001, theta)
+    if (length(fixPar)!=n.par) stop("'fixPar' argument is not the right length! The number of parameters in the model is ", n.par, "\n")
+	if(!(length(constr$lower)==1 | length(constr$lower)==sum(is.na(fixPar)))) stop("The number of lower contraints specified is not correct! The number of free parameters is ", sum(is.na(fixPar)),"\n")
+	if(!(length(constr$upper)==1 | length(constr$upper)==sum(is.na(fixPar)))) stop("The number of upper contraints specified is not correct! The number of free parameters is ", sum(is.na(fixPar)),"\n")
+    if(length(constr$upper)==1) constr$upper <- rep(constr$upper, sum(is.na(fixPar)))
+	if(length(constr$lower)==1) constr$lower <- rep(constr$lower, sum(is.na(fixPar)))
+	if (missing(theta)) theta <- ifelse(constr$lower > -Inf, constr$lower+0.001, 0.0)
+    #theta <- ifelse(is.na(theta), 0.00001, theta)
     if(driftMod & is.na(fixPar[n.par])) theta[sum(is.na(fixPar))] <- log(diff(range(data[,Time.name]))/9)
     if (length(theta) != sum(is.na(fixPar))) {
-        stop("\nWrong number parameters specified in start value.\n")
+        stop("\nWrong number of parameters specified in start value.\n")
     }
 
     ## PROCESS DATA AND LONGITUDE ADJUSTMENT FOR POLAR COORDS ##
@@ -132,7 +142,7 @@
                    P1.y=initial.state$P1.y, lonAdj=lonAdjVals, mov.mf=mov.mf,
                    err.mfX=err.mfX, err.mfY=err.mfY, stop.mf=stop.mf,
                    n.mov=n.mov, n.errX=n.errX, n.errY=n.errY, stopMod=stopMod,
-                   driftMod=driftMod, prior=prior, need.hess=need.hess, constr=constr), silent=TRUE)
+                   driftMod=driftMod, prior=prior, need.hess=need.hess), silent=TRUE)
       attempts <- attempts - 1
       checkFit <- 1.0*(inherits(mle, 'try-error'))
     }

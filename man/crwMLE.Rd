@@ -185,7 +185,9 @@ prior=NULL, need.hess=TRUE, initialSANN=NULL, attempts=1)
 
   The data set specified by \code{data} must contain a numeric or POSIXct column
   which is used as the time index for analysis. The column name is
-  specified by the \code{Time.name} argument. Also, for stopping models,
+  specified by the \code{Time.name} argument. If a POSIXct column is used
+  it is internally converted to a numeric vector with units of hours. If this is not appropriate for 
+  your data, it is better to convert it yourself prior to analysis with crawl. Also, for stopping models,
   the stopping covariate must be between 0 and 1 inclusive, with 1
   representing complete stop of the animal (no true movement, however,
   location error can still occur) and 0 represent unhindered
