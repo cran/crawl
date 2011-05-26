@@ -13,9 +13,7 @@
     n.errY <- object.crwFit$n.errY
     n.mov <- object.crwFit$n.mov
     tn <- object.crwFit$Time.name
-	if(inherits(predTime, "POSIXct")){
-		predTime <- as.numeric(predTime)/3600
-	}
+	if(inherits(predTime, "POSIXct")) predTime <- as.numeric(predTime)/3600
 
     ## Data setup ##
     if (!is.null(predTime)) {

@@ -14,11 +14,13 @@ function(object.crwFit, predTime=NULL, method="IS", parIS=1000, df=Inf, grid.eps
    n.errY <- object.crwFit$n.errY
    n.mov <- object.crwFit$n.mov
    tn <- object.crwFit$Time.name
+   if(any(diff(data[,tn])==0)) stop("\nERROR: There are duplicate time records for some data entries! Please remove before proceeding.\n")
    if(inherits(predTime, "POSIXct")){
 	   predTime <- as.numeric(predTime)/3600
    }
    ## Data setup ##
    if (!is.null(predTime)) {
+	  if(inherits(predTime, "POSIXct")) predTime <- as.numeric(predTime)/3600
       origTime <- data[, tn]
       data$predType <- "o"
       predData <- data.frame(predTime, "p")

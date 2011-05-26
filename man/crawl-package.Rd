@@ -22,9 +22,9 @@
   \tabular{ll}{
     Package: \tab crawl\cr
     Type: \tab Package\cr
-    Version: \tab 1.1-2\cr
-    Date: \tab 2010-11-17\cr
-    License: \tab GPL (>=2) \cr
+    Version: \tab 1.3\cr
+    Date: \tab 2011-05-26\cr
+    License: \tab Unlimited \cr
     LazyLoad: \tab yes\cr
   }
 

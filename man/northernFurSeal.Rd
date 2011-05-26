@@ -82,8 +82,10 @@ initial.drift <- list(a1.x=c(189.686, 0, 0), a1.y=c(57.145, 0, 0),
 fit <- crwMLE(mov.model=~1, err.model=list(x=~errX, y=~errY), drift.model=TRUE,
               data=nfsNew, coord=c("longitude", "latitude"), polar.coord=TRUE,
               Time.name="Time", initial.state=initial.drift, 
-              fixPar=c(NA, 1, NA, 1, NA, NA, NA,NA), control=list(maxit=2000,trace=1, REPORT=10),
-              initialSANN=list(maxit=100, trace=1, REPORT=1))
+              fixPar=c(NA, 1, NA, 1, NA, NA, NA, NA), 
+              control=list(maxit=2000,trace=1, REPORT=10),
+              initialSANN=list(maxit=300, trace=1, REPORT=1)
+              )
 
 ##Make hourly location predictions
 predTime <- seq(ceiling(min(nfsNew$Time)), floor(max(nfsNew$Time)), 1)
