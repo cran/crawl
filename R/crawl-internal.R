@@ -178,6 +178,12 @@ rmvtt <- function(mu, Sigma, df=Inf, lower, upper){
 	else return(out)
 }
 
+getSD <- function(x){
+	d <- as.numeric(sapply(strsplit(as.character(x),"e-"), function(x) x[2]))
+	if(any(!is.na(d))) return(max(d, na.rm=TRUE))
+	else return(0)
+}
+
 # dmvslash <- function(x, mu, Sigma, q, log.p=FALSE){
 # 	p <- length(x)
 # 	if(missing(mu)) mu <- rep(0,p)
