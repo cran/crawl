@@ -2,11 +2,12 @@ Package: crawl
 Type: Package
 Title: Fit continuous-time correlated random walk models for animal
         movement data
-Version: 1.3-1
-Date: 2011-11-26
+Version: 1.3-2
+Date: 2011-11-21
 Author: Devin S. Johnson
 Maintainer: Devin S. Johnson <devin.johnson@noaa.gov>
-Depends: mvtnorm, sp, tripEstimation
+Depends: mvtnorm, sp
+Suggests: tripEstimation
 Description: The (C)orrelated (RA)ndom (W)alk (L)ibrary of
     R functions was designed for fitting continuous-time
     correlated random walk (CTCRW) models with time indexed
@@ -20,6 +21,6 @@ Collate: 'AllMethod.R' 'crawl-internal.R' 'crawl-package.R' 'crwMLE.R'
         'crwSamplePar.R' 'crwSimulator.R' 'crwUseGrid.R' 'expandPred.R'
         'fillCols.R' 'getQ.R' 'intToPOSIX.R' 'logSpeed.R'
         'mergeTrackStop.R'
-Packaged: 2011-10-27 22:07:21 UTC; johnsond@afsc.noaa.gov
+Packaged: 2011-11-22 01:17:37 UTC; johnsond@afsc.noaa.gov
 Repository: CRAN
-Date/Publication: 2011-10-28 07:08:29
+Date/Publication: 2011-12-02 16:22:56
