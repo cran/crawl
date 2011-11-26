@@ -38,7 +38,7 @@ SUBROUTINE crw_simulate(tau2y, tau2x, Qmat, Tmat, x, y, loctype, &
   	alphaY(1,1,1) = a1y(1) + (P1y(1,2)/P1y(2,2))*(alphaY(2,1,1)-a1y(2)) &
                            + sqrt(P1y(1,1) - ((P1y(1,2)*P1y(1,2))/P1y(2,2)))*alphaY(1,1,1)
   END IF
-  IF(P1x(1,1)==0.0) THEN
+  IF(P1x(2,2)==0.0) THEN
   	alphaX(1,1,1) = a1x(1) + sqrt(P1x(1,1))*alphaX(1,1,1)
   
   ELSE

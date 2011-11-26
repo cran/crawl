@@ -2,6 +2,7 @@ getQT <- function(sig2, b, sig2.drift, b.drift, delta, driftMod)
 {
 	Qmat <- matrix(0, length(b), 3+2*driftMod)
 	Tmat <- matrix(0, length(b), 2+2*driftMod)
+	delta.sd <- max(getSD(delta), 16)
 	if(!driftMod){
 		idx <- (b<=0.1)
 		psig2 <- sig2 #exp(log(sig2)-2*log(b))
@@ -19,11 +20,13 @@ getQT <- function(sig2, b, sig2.drift, b.drift, delta, driftMod)
 		Qmat[idx,3] <- sig2[idx]*ps3a(delta[idx],b[idx])
 		#Qmat[!idx,3] <- sig2[!idx]*exp(pexp(delta[!idx],2*b[!idx],,TRUE)-log(2*b[!idx]))
 		Qmat[!idx,3] <- sig2[!idx]*exp(log(b[!idx]) + pexp(delta[!idx],2*b[!idx],,TRUE))/2
+		
 		#
 		Tmat[,1] <- exp(pexp(delta,b,,TRUE)-log(b))
 		Tmat[,2] <- exp(-b*delta)
-		#
 		
+		#
+
 # 		print(zapsmall(data.frame(v1=v1,v2=v2, Q=Qmat, xxx1, xxx2, xxx3, b)))
 # 		cat(sum(Qmat[,1] - Qmat[,2]^2/Qmat[,3]<0), " bad values\n")
 # 		cat(min(b),"\n")
@@ -73,6 +76,8 @@ getQT <- function(sig2, b, sig2.drift, b.drift, delta, driftMod)
 		#
 		Tmat[,4] <- exp(-b.drift*delta)
 	}
+	Qmat <- round(Qmat,delta.sd)
+	Tmat <- round(Tmat, delta.sd)
 	return(list(Qmat=Qmat, Tmat=Tmat))
 }
 
