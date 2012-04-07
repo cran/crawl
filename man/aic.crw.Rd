@@ -1,6 +1,9 @@
-\name{AIC.crwFit}
-\alias{AIC.crwFit}
+\name{aic.crw}
+\alias{aic.crw}
 \title{Calculates AIC for all objects of class crwFit listed as arguments}
+\usage{
+  aic.crw(...)
+}
 \arguments{
   \item{\dots}{a series of crwFit objects}
 }
