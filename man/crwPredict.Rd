@@ -2,6 +2,10 @@
 \alias{crwPredict}
 \title{Predict animal locations and velocities using a fitted CTCRW model and
 calculate measurement error fit statistics}
+\usage{
+  crwPredict(object.crwFit, predTime = NULL,
+    speedEst = FALSE, flat = TRUE, getUseAvail = FALSE)
+}
 \arguments{
   \item{object.crwFit}{A model object from
   \code{\link{crwMLE}}.}
@@ -13,6 +17,9 @@ calculate measurement error fit statistics}
 
   \item{flat}{logical. Should the result be returned as a
   flat data.frame.}
+
+  \item{getUseAvail}{logical. This is a test function. Not
+  for general use yet.}
 }
 \value{
   List with the following elements:
