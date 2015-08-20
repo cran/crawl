@@ -10,11 +10,12 @@
 #' @param object \code{crwPredict} object.
 #' @param plotType type of plot has to be one of the following: \dQuote{map} or
 #' \dQuote{ll} (default).
+#' @param ... Further arguments passed to plotting commands.
 #' @return A plot.
 #' @author Devin S. Johnson and Sebastian Luque
 #' @seealso See \code{demo(northernFurSealDemo)} for additional examples.
 #' @export
-"crwPredictPlot" <- function(object, plotType="ll")
+"crwPredictPlot" <- function(object, plotType="ll",...)
 {
     y.c <- attr(object, "coord")['y']
     x.c <- attr(object, "coord")['x']
@@ -49,17 +50,16 @@
 
     switch(plotType,
            map = {
-               plot(xvals, yvals, pch=16, col="blue", xlab=x.c, ylab=y.c,
-                    xlim=x.ylims, ylim=y.ylims, cex=0.5)
+               plot(xvals, yvals, pch=16, col="blue",xlim=x.ylims, ylim=y.ylims, cex=0.5,...)
                lines(mu.x, mu.y, col="red")},
            ll = {layout(matrix(1:2, ncol=1))
                  plot(Time, xvals, pch=16, col="blue", xlab="time", ylab=x.c,
-                      ylim=x.ylims, cex=0.5)
+                      ylim=x.ylims, cex=0.5,...)
                  lines(Time, mu.x, col="red")
                  lines(Time, mu.xUp, col="green", pch=16, cex=0.2)
                  lines(Time, mu.xLo, col="green", pch=16, cex=0.2)
                  plot(Time, yvals, pch=16, col="blue", xlab="time", ylab=y.c,
-                      ylim=y.ylims, cex=0.5)
+                      ylim=y.ylims, cex=0.5,...)
                  lines(Time, mu.y, col="red")
                  lines(Time, mu.yUp, col="green", pch=16, cex=0.2)
                  lines(Time,mu.yLo, col='green', pch=16, cex=0.2)})
