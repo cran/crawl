@@ -2,8 +2,8 @@
 % Please edit documentation in R/crawl-package.R
 \docType{package}
 \name{crawl-package}
-\alias{crawl}
 \alias{crawl-package}
+\alias{crawl}
 \title{Fit Continuous-Time Correlated Random Walk Models to Animal Movement Data}
 \description{
 The Correlated RAndom Walk Library (I know it is not an R library,
@@ -15,8 +15,8 @@ version of the continuous-time staochistic movement process.
 \tabular{ll}{ 
 Package: \tab crawl\cr 
 Type: \tab Package\cr 
-Version: \tab 2.0.1\cr 
-Date: \tab July 22, 2016\cr 
+Version: \tab 2.1.1\cr 
+Date: \tab April 21, 2017\cr 
 License: \tab CC0 \cr 
 LazyLoad: \tab yes\cr 
 }
@@ -30,14 +30,13 @@ or the U.S. Dept. of Commerce. In addition, reference to trade names does not im
 National Marine Fisheries Service, NOAA. While the best efforts have been made to insure the 
 highest quality, tools such as this are under constant development and are subject to change.
 }
-\author{
-Devin S. Johnson
-
-Maintainer: Devin S. Johnson <devin.johnson@noaa.gov>
-}
 \references{
 Johnson, D., J. London, M. -A. Lea, and J. Durban (2008)
 Continuous-time correlated random walk model for animal telemetry data.
 Ecology 89(5) 1208-1215.
 }
+\author{
+Devin S. Johnson
 
+Maintainer: Devin S. Johnson <devin.johnson@noaa.gov>
+}

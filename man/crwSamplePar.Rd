@@ -6,7 +6,7 @@
 simulation.}
 \usage{
 crwSamplePar(object.sim, method = "IS", size = 1000, df = Inf,
-  grid.eps = 1, crit = 2.5, scale = 1)
+  grid.eps = 1, crit = 2.5, scale = 1, force.quad)
 }
 \arguments{
 \item{object.sim}{A simulation object from \code{\link{crwSimulator}}.}
@@ -25,6 +25,9 @@ posterior}
 
 \item{scale}{Scale multiplier for the covariance matrix of the t
 approximation}
+
+\item{force.quad}{A logical indicating whether or not to force the execution 
+of the quadrature method for large parameter vectors.}
 }
 \value{
 List with the following elements:
@@ -96,10 +99,9 @@ locations using \code{\link{crwPostIS}}. This function is usually called
 from \code{\link{crwPostIS}}. The average user should have no need to call
 this function directly.
 }
-\author{
-Devin S. Johnson
-}
 \seealso{
 See \code{demo(northernFurSealDemo)} for example.
 }
-
+\author{
+Devin S. Johnson
+}
