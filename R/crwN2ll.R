@@ -24,7 +24,7 @@
 #' @param n.errX number or longitude error parameters.
 #' @param n.errY number of latitude error parameters.
 #' @param n.mov number or movement parameters.
-#' @param driftMod Logical. inicates whether a drift model is specified.
+#' @param driftMod Logical. indicates whether a drift model is specified.
 #' @param prior Function of theta that returns the log-density of the prior
 #' @param need.hess Whether or not the Hessian will need to be calculated from
 #' this call
@@ -45,7 +45,7 @@ crwN2ll = function(theta, fixPar, y, noObs, delta, #a, P,
   N <- nrow(y)
   par <- fixPar
   par[is.na(fixPar)] <- theta
-  
+  y <- as.matrix(y)
   argslist = par2arglist(theta, fixPar, y, noObs, delta,
                           mov.mf, err.mfX, err.mfY, rho=NULL, activity=NULL,
                           n.errX, n.errY, n.mov, driftMod)

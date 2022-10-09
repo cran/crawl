@@ -10,7 +10,7 @@
 #' 
 #' The crwPostIS draws a posterior sample of the track state matrices. If
 #' fullPost was set to TRUE when the object.sim was build in
-#' \link{crwSimulator} then a psuedo-posterior draw will be made by first
+#' \link{crwSimulator} then a pseudo-posterior draw will be made by first
 #' sampling a parameter value from a multivariate t distribution which
 #' approximates the marginal posterior distribution of the parameters. The
 #' covariance matrix from the fitted model object is used to scale the MVt
@@ -19,7 +19,7 @@
 #' fitted values.
 #' 
 #' To correct for the MVt approximation, the importance sampling weight is also
-#' supplied. When calulating averages of track functions for Bayes estimates
+#' supplied. When calculating averages of track functions for Bayes estimates
 #' one should use the importance sampling weights to calculate a weighted
 #' average (normalizing first, so the weights sum to 1).
 #' 
@@ -78,6 +78,7 @@ crwPostIS = function(object.sim, fullPost=TRUE, df=Inf, scale=1, thetaSamp=NULL)
   upper <- object.sim$upper 
   prior <- object.sim$prior
   eInd <- is.na(fixPar)
+  ts = object.sim$time.scale
   ###
   ### Sample parameter vector
   ###
@@ -119,10 +120,11 @@ crwPostIS = function(object.sim, fullPost=TRUE, df=Inf, scale=1, thetaSamp=NULL)
   samp <- list(alpha.sim=out$sim,
                locType=object.sim$locType, TimeNum=object.sim$TimeNum, 
                loglik=out$lly+out$llx, par=par, log.isw = isw)
-  samp[[object.sim$Time.name]] = object.sim$TimeNum
+  samp[[object.sim$Time.name]] = object.sim$TimeNum*ts
   if(object.sim$return_posix) samp[[object.sim$Time.name]] = lubridate::as_datetime(samp[[object.sim$Time.name]])
   class(samp) <- c("crwIS","list")
   attr(samp, "Time.name") = object.sim$Time.name
+  attr(samp, "time.scale") = object.sim$time.scale
   attr(samp,"coord") <- object.sim$coord
   attr(samp,"random.drift") <- object.sim$driftMod
   attr(samp,"activity.model") <- !is.null(object.sim$activity)

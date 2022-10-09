@@ -4,24 +4,25 @@
 \alias{crw_as_sf}
 \alias{crw_as_sf.crwIS}
 \alias{crw_as_sf.crwPredict}
+\alias{crw_as_sf.list}
 \title{Coerce to sf/sfc object}
 \usage{
-crw_as_sf(crw_object, ftype, locType, group)
+crw_as_sf(data, ftype, locType, group)
 
-\method{crw_as_sf}{crwIS}(crw_object, ftype, locType = c("p", "o"),
-  group = NULL, ...)
+\method{crw_as_sf}{crwIS}(data, ftype, locType = c("p", "o", "f"), group = NULL, ...)
 
-\method{crw_as_sf}{crwPredict}(crw_object, ftype, locType = c("p", "o"),
-  group = NULL, ...)
+\method{crw_as_sf}{crwPredict}(data, ftype, locType = c("p", "o", "f"), group = NULL, ...)
+
+\method{crw_as_sf}{list}(data, ftype, locType = c("p", "o", "f"), ...)
 }
 \arguments{
-\item{crw_object}{an object of class \code{"crwIS"} or \code{"crwPredict"}}
+\item{data}{an object of class \code{"crwIS"} or \code{"crwPredict"}}
 
 \item{ftype}{character of either "POINT" or "LINESTRING" specifying the feature type}
 
 \item{locType}{character vector of location points to include ("p","o")}
 
-\item{group}{(optional) character specifying the column to group by for mulitple LINESTRING features}
+\item{group}{(optional) character specifying the column to group by for multiple LINESTRING features}
 
 \item{...}{Additional arguments that are ignored}
 }
@@ -29,17 +30,20 @@ crw_as_sf(crw_object, ftype, locType, group)
 Provides reliable conversion of \code{"crwIS"} and \code{"crwPredict"} objects
 into simple features objects supported in the \code{"sf"} package. Both 
 \code{"sf"} objects with "POINT" geometry and \code{"sfc_LINESTRING"} objects
-are created. Coersion of \code{"crwPredict"} objects to \code{"sfc_LINESTRING"}
+are created. Coercion of \code{"crwPredict"} objects to \code{"sfc_LINESTRING"}
 has an option \code{"group"} argument when the \code{"crwPredict"} object
 includes predictions from multiple deployments. The grouping column will be 
 used and a tibble of multiple \code{"sf_LINESTRING"} objects will be returned
 }
 \section{Methods (by class)}{
 \itemize{
-\item \code{crwIS}: coerce crwIS object to sf (POINT or 
+\item \code{crw_as_sf(crwIS)}: coerce crwIS object to sf (POINT or 
 LINESTRING geometry)
 
-\item \code{crwPredict}: coerce crwPredict object to sf (POINT or 
+\item \code{crw_as_sf(crwPredict)}: coerce crwPredict object to sf (POINT or 
 LINESTRING geometry)
+
+\item \code{crw_as_sf(list)}: coerce list of crwIS objects to sf (LINESTRING or 
+MULTILINESTRING geometry)
+
 }}
-
