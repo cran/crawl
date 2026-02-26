@@ -9,8 +9,8 @@
 #' \tabular{ll}{ 
 #' Package: \tab crawl\cr 
 #' Type: \tab Package\cr 
-#' Version: \tab 2.3.0\cr 
-#' Date: \tab October 6, 2022\cr 
+#' Version: \tab 2.3.1\cr 
+#' Date: \tab October 3, 2024\cr 
 #' License: \tab CC0 \cr 
 #' LazyLoad: \tab yes\cr 
 #' }
@@ -25,7 +25,6 @@
 #'  
 #' @name crawl-package
 #' @aliases crawl-package crawl
-#' @docType package
 #' @author Josh London and Devin S. Johnson 
 #' 
 #' Maintainer: Devin S. Johnson <devin.johnson@@noaa.gov>
@@ -40,8 +39,8 @@
 #'             na.pass optim pchisq pexp pnorm qnorm 
 #'             rchisq runif sd setNames median rnorm
 #' @useDynLib crawl, .registration = TRUE
+"_PACKAGE"
 
-NULL
 
 if(getRversion() >= "2.15.1")  utils::globalVariables(c("."))
 
@@ -168,8 +167,8 @@ NULL
           "Demos and documentation can be found at our new GitHub repository:\n",
           "https://dsjohnson.github.io/crawl_examples/\n",
           "\n",
-          "WARNING!!! v. 2.3.0 will be the last version of {crawl} hosted on CRAN.\n",
-          "see 'https://github.com/NMML/crawl' for any future bug fixes."
+          "WARNING!!! v. 2.3.x will be the last version of {crawl} hosted on CRAN.\n",
+          "see 'https://github.com/NMML/crawl' for any future update beyond bug fixes."
           )
   )
 }

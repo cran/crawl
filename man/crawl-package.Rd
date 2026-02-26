@@ -15,8 +15,8 @@ version of the continuous-time stochastic movement process.
 \tabular{ll}{ 
 Package: \tab crawl\cr 
 Type: \tab Package\cr 
-Version: \tab 2.3.0\cr 
-Date: \tab October 6, 2022\cr 
+Version: \tab 2.3.1\cr 
+Date: \tab October 3, 2024\cr 
 License: \tab CC0 \cr 
 LazyLoad: \tab yes\cr 
 }
@@ -34,6 +34,14 @@ highest quality, tools such as this are under constant development and are subje
 Johnson, D., J. London, M. -A. Lea, and J. Durban (2008)
 Continuous-time correlated random walk model for animal telemetry data.
 Ecology 89(5) 1208-1215.
+}
+\seealso{
+Useful links:
+\itemize{
+  \item \url{https://github.com/NMML/crawl}
+  \item Report bugs at \url{https://github.com/NMML/crawl/issues}
+}
+
 }
 \author{
 Josh London and Devin S. Johnson 
